@@ -1,26 +1,172 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --app-shell-max-width-xs: 100%;
+    --app-shell-max-width-sm: 560px;
+    --app-shell-max-width-md: 720px;
+    --app-shell-max-width-lg: 820px;
+    --app-shell-max-width-xl: 880px;
+    --app-shell-wide-max-width-sm: 700px;
+    --app-shell-wide-max-width-md: 1120px;
+    --app-shell-wide-max-width-lg: 1280px;
+    --app-shell-wide-max-width-xl: 1440px;
+    --note-board-max-width-sm: 520px;
+    --note-board-max-width-md: 720px;
+    --note-board-max-width-lg: 1024px;
+    --note-board-max-width-xl: 1200px;
+    --app-shell-grid-gap: 1.5rem;
+
+    --color-surface-base: 20 20 22;
+    --color-surface-muted: 28 28 31;
+    --color-surface-elevated: 36 36 40;
+    --color-surface-overlay: 10 10 12;
+
+    --color-outline-subtle: 50 50 54;
+    --color-outline-strong: 249 115 22;
+
+    --color-ink-50: 12 12 12;
+    --color-ink-100: 24 24 24;
+    --color-ink-200: 45 45 45;
+    --color-ink-300: 72 72 78;
+    --color-ink-400: 110 110 120;
+    --color-ink-500: 158 158 170;
+    --color-ink-600: 196 196 208;
+    --color-ink-700: 222 222 230;
+    --color-ink-800: 240 240 245;
+    --color-ink-900: 247 247 250;
+
+    --color-accent-50: 255 247 237;
+    --color-accent-100: 255 237 213;
+    --color-accent-200: 254 215 170;
+    --color-accent-300: 253 186 116;
+    --color-accent-400: 251 146 60;
+    --color-accent-500: 249 115 22;
+    --color-accent-600: 234 88 12;
+    --color-accent-700: 194 65 12;
+    --color-accent-800: 154 52 18;
+    --color-accent-900: 124 45 18;
+
+    --color-success: 34 197 94;
+    --color-warning: 250 204 21;
+    --color-danger: 239 68 68;
+
+    color-scheme: dark;
+  }
+
+  [data-theme="light"] {
+    --color-surface-base: 249 250 251;
+    --color-surface-muted: 255 255 255;
+    --color-surface-elevated: 255 255 255;
+    --color-surface-overlay: 15 23 42;
+
+    --color-outline-subtle: 226 232 240;
+    --color-outline-strong: 148 163 184;
+
+    --color-ink-50: 248 250 252;
+    --color-ink-100: 241 245 249;
+    --color-ink-200: 226 232 240;
+    --color-ink-300: 203 213 225;
+    --color-ink-400: 148 163 184;
+    --color-ink-500: 100 116 139;
+    --color-ink-600: 71 85 105;
+    --color-ink-700: 51 65 85;
+    --color-ink-800: 30 41 59;
+    --color-ink-900: 15 23 42;
+
+    --color-accent-50: 255 247 237;
+    --color-accent-100: 255 237 213;
+    --color-accent-200: 254 215 170;
+    --color-accent-300: 253 186 116;
+    --color-accent-400: 251 146 60;
+    --color-accent-500: 249 115 22;
+    --color-accent-600: 234 88 12;
+    --color-accent-700: 194 65 12;
+    --color-accent-800: 154 52 18;
+    --color-accent-900: 124 45 18;
+
+    --color-success: 22 163 74;
+    --color-warning: 217 119 6;
+    --color-danger: 220 38 38;
+
+    color-scheme: light;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    min-height: 100vh;
+    background-color: rgb(var(--color-surface-base));
+    color: rgb(var(--color-ink-900));
+    font-family: var(
+        --font-geist-sans,
+        system-ui
+      ),
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      sans-serif;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  input,
+  button {
+    font: inherit;
+  }
+
+  ::selection {
+    color: rgb(var(--color-surface-base));
+    background-color: rgb(var(--color-accent-400) / 0.35);
+  }
+
+  @media (pointer: fine) {
+    ::-webkit-scrollbar {
+      width: 0.75rem;
+      height: 0.75rem;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.5);
+      border-radius: 999px;
+      border: 2px solid transparent;
+      background-clip: content-box;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(100, 116, 139, 0.8);
+      background-clip: content-box;
+    }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  .surface-card {
+    @apply rounded-xl border border-outline-subtle bg-surface-elevated shadow-sm;
+  }
+
+  .icon-button {
+    @apply grid place-items-center rounded-full p-2 text-ink-500 transition-all duration-150 hover:bg-surface-muted hover:text-ink-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500;
+  }
+
+  .kbd-chip {
+    @apply inline-flex items-center gap-1 rounded-md border border-outline-subtle bg-surface-muted px-2 py-1 text-xs font-medium text-ink-500;
+  }
+}
+
+@layer utilities {
+  .text-muted {
+    @apply text-ink-500;
+  }
 }

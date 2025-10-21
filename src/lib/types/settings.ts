@@ -1,0 +1,20 @@
+import type { Timestamp } from "firebase/firestore";
+
+export type ReminderChannel = "email" | "sms" | "push";
+
+export type UserPreferenceDoc = {
+  reminderChannels: ReminderChannel[];
+  quietHoursStart?: string | null;
+  quietHoursEnd?: string | null;
+  digestEnabled: boolean;
+  smartSuggestions: boolean;
+  focusModePinned: boolean;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+};
+
+export type UserPreference = Omit<UserPreferenceDoc, "createdAt" | "updatedAt"> & {
+  id: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
