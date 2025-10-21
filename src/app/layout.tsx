@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Kanit } from "next/font/google";
 import { AppProviders } from "@/components/providers/app-providers";
+import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -36,6 +37,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${kanit.variable} bg-surface-base text-ink-900 antialiased transition-colors duration-300`}
       >
         <AppProviders>{children}</AppProviders>
+        <Toaster />
       </body>
     </html>
   );

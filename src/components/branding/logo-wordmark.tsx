@@ -12,7 +12,7 @@ type LogoWordmarkProps = {
 };
 
 export function LogoWordmark({
-  href = "/",
+  href,
   className,
   iconSize = 64,
 }: LogoWordmarkProps) {
