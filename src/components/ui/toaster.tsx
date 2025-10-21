@@ -181,11 +181,11 @@ export function useToast() {
     toasts,
     toast: (data: Omit<ToastData, "id">) => {
       // Map destructive variant to error
-      const mappedData = {
+      const mappedData: Omit<ToastData, "id"> = {
         ...data,
         variant: data.variant === "destructive" ? "error" : data.variant,
       };
-      toastState.add(mappedData as any);
+      toastState.add(mappedData);
     },
     dismiss: (id: string) => toastState.remove(id),
   };

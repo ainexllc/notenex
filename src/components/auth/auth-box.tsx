@@ -88,7 +88,7 @@ export function AuthBox({
       description: "You have successfully signed in.",
       variant: "success",
     });
-    router.push(redirectPath);
+    router.push(redirectPath as never);
   };
 
   const onLoginSubmit = async (data: LoginFormData) => {
@@ -96,10 +96,10 @@ export function AuthBox({
     try {
       await signInWithEmail(data.email, data.password);
       handleLoginSuccess();
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Something went wrong",
-        description: error?.message || "Unable to sign in right now. Please try again.",
+        description: error instanceof Error ? error.message : "Unable to sign in right now. Please try again.",
         variant: "error",
       });
     } finally {
@@ -116,11 +116,11 @@ export function AuthBox({
         description: "Your account has been created successfully.",
         variant: "success",
       });
-      router.push(redirectPath);
-    } catch (error: any) {
+      router.push(redirectPath as never);
+    } catch (error: unknown) {
       toast({
         title: "Error",
-        description: error.message || "Failed to create account",
+        description: error instanceof Error ? error.message : "Failed to create account",
         variant: "error",
       });
     } finally {
@@ -137,11 +137,11 @@ export function AuthBox({
         description: "Signed in with Google successfully.",
         variant: "success",
       });
-      router.push(redirectPath);
-    } catch (error: any) {
+      router.push(redirectPath as never);
+    } catch (error: unknown) {
       toast({
         title: "Google sign-in failed",
-        description: error?.message || "Unable to sign in with Google.",
+        description: error instanceof Error ? error.message : "Unable to sign in with Google.",
         variant: "error",
       });
     } finally {

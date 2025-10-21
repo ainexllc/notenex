@@ -5,14 +5,12 @@ import { useRouter } from "next/navigation";
 import {
   Loader2,
   Brain,
-  BarChart3,
   Palette,
   Sparkles,
   Shield,
   Menu,
   X,
   Tags,
-  Lightbulb,
   Clock,
 } from "lucide-react";
 
@@ -87,9 +85,10 @@ export default function HomePage() {
   if (status === "loading") {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a]">
-        <div className="text-center">
+        <div className="text-center space-y-3">
           <Loader2 className="mx-auto mb-4 h-12 w-12 animate-spin text-[#f97316]" />
-          <p className="text-gray-400">Loading NoteNex…</p>
+          <p className="text-lg font-medium text-white">Checking your session…</p>
+          <p className="text-sm text-gray-500">Restoring your workspace if you&apos;re already logged in</p>
         </div>
       </div>
     );
@@ -98,9 +97,10 @@ export default function HomePage() {
   if (status === "authenticated") {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a]">
-        <div className="text-center">
+        <div className="text-center space-y-3">
           <Loader2 className="mx-auto mb-4 h-12 w-12 animate-spin text-[#f97316]" />
-          <p className="text-gray-400">Redirecting to workspace…</p>
+          <p className="text-lg font-medium text-white">Welcome back!</p>
+          <p className="text-sm text-gray-500">Taking you to your workspace…</p>
         </div>
       </div>
     );
