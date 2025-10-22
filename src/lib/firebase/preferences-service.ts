@@ -10,6 +10,7 @@ import type { UserPreference } from "@/lib/types/settings";
 
 export const DEFAULT_PREFERENCES: Omit<UserPreference, "id" | "createdAt" | "updatedAt"> = {
   reminderChannels: ["push", "email"],
+  smsNumber: null,
   quietHoursStart: null,
   quietHoursEnd: null,
   digestEnabled: true,
@@ -33,6 +34,7 @@ function mapPreferenceSnapshot(
   return {
     id: userId,
     reminderChannels: data.reminderChannels ?? DEFAULT_PREFERENCES.reminderChannels,
+    smsNumber: data.smsNumber ?? null,
     quietHoursStart: data.quietHoursStart ?? null,
     quietHoursEnd: data.quietHoursEnd ?? null,
     digestEnabled:

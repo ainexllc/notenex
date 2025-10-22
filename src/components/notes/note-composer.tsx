@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import { useMemo, useRef, useState, useEffect } from "react";
+import { useCallback, useMemo, useRef, useState, useEffect } from "react";
 import {
   Archive,
   CheckSquare,
@@ -26,7 +26,6 @@ import { useReminders } from "@/components/providers/reminders-provider";
 import type { ReminderFrequency } from "@/lib/types/reminder";
 import type { ReminderChannel } from "@/lib/types/settings";
 import {
-  DEFAULT_REMINDER_CHANNELS,
   REMINDER_CHANNELS,
   REMINDER_FREQUENCIES,
 } from "@/components/reminders/reminder-constants";
@@ -76,6 +75,7 @@ export function NoteComposer() {
   const [customCron, setCustomCron] = useState("");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const composerRef = useRef<HTMLDivElement | null>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const checklistInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const pendingChecklistFocusId = useRef<string | null>(null);
@@ -140,7 +140,7 @@ export function NoteComposer() {
     return parseDateTimeLocalInput(reminderValue);
   }, [reminderEnabled, reminderValue]);
 
-  const resetState = () => {
+  const resetState = useCallback(() => {
     setExpanded(false);
     setTitle("");
     setBody("");
@@ -161,7 +161,7 @@ export function NoteComposer() {
     setReminderChannels([...preferences.reminderChannels]);
     setReminderFrequency("once");
     setCustomCron("");
-  };
+  }, [preferences.reminderChannels]);
 
   const handleReminderToggle = () => {
     setReminderEnabled((prev) => {
@@ -187,8 +187,12 @@ export function NoteComposer() {
     });
   };
 
-  const handleSubmit = async () => {
-    if (!hasContent || isSubmitting) {
+  const handleSubmit = useCallback(async () => {
+    if (isSubmitting) {
+      return;
+    }
+
+    if (!hasContent) {
       resetState();
       return;
     }
@@ -239,7 +243,29 @@ export function NoteComposer() {
       setIsSubmitting(false);
       resetState();
     }
-  };
+  }, [
+    isSubmitting,
+    hasContent,
+    resetState,
+    reminderEnabled,
+    reminderFireAt,
+    reminderChannels,
+    preferences.reminderChannels,
+    createNote,
+    title,
+    body,
+    mode,
+    checklist,
+    color,
+    pinned,
+    archived,
+    selectedLabelIds,
+    attachments,
+    createReminder,
+    reminderFrequency,
+    customCron,
+    updateNote,
+  ]);
 
   const handleChecklistChange = (itemId: string, next: Partial<ChecklistItem>) => {
     setChecklist((prev) =>
@@ -299,14 +325,55 @@ export function NoteComposer() {
   };
 
   const backgroundClass =
-    color === "default" ? "bg-surface-elevated" : `bg-${color}`;
+    color === "default"
+      ? "bg-surface-elevated"
+      : `bg-${color} dark:bg-${color}-dark`;
+
+  const canUseSms = Boolean(preferences.smsNumber?.trim());
+
+  useEffect(() => {
+    if (!canUseSms) {
+      setReminderChannels((prev) => prev.filter((channel) => channel !== "sms"));
+    }
+  }, [canUseSms]);
+
+  useEffect(() => {
+    if (!expanded) {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!composerRef.current) {
+        return;
+      }
+
+      if (composerRef.current.contains(event.target as Node)) {
+        return;
+      }
+
+      if (isSubmitting) {
+        return;
+      }
+
+      if (hasContent) {
+        void handleSubmit();
+      } else {
+        resetState();
+      }
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+    };
+  }, [expanded, hasContent, handleSubmit, resetState, isSubmitting]);
 
   return (
     <section className="w-full">
       {!expanded ? (
         <button
           type="button"
-          className="flex w-full items-center justify-between rounded-3xl bg-surface-muted/80 px-5 py-3 text-left text-sm text-muted shadow-lg transition hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500"
+          className="flex w-full items-center justify-between rounded-3xl border-2 border-transparent bg-surface-muted/80 px-5 py-3 text-left text-sm text-muted shadow-lg transition hover:border-orange-500 hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 dark:shadow-none"
           onClick={() => setExpanded(true)}
         >
           <span>Take a note…</span>
@@ -317,8 +384,9 @@ export function NoteComposer() {
         </button>
       ) : (
         <div
+          ref={composerRef}
           className={clsx(
-            "w-full rounded-3xl shadow-2xl transition focus-within:shadow-[0_30px_80px_-45px_rgba(249,115,22,0.55)]",
+            "w-full rounded-3xl shadow-2xl transition focus-within:shadow-[0_30px_80px_-45px_rgba(0,0,0,0.25)] dark:shadow-[0_8px_20px_-4px_rgba(249,115,22,0.35)] dark:focus-within:shadow-[0_12px_30px_-8px_rgba(249,115,22,0.45)]",
             backgroundClass,
           )}
         >
@@ -428,11 +496,11 @@ export function NoteComposer() {
               </div>
             )}
 
-            <div className="rounded-2xl border border-outline-subtle/70 bg-white/70 p-4 shadow-sm">
+            <div className="rounded-2xl border border-outline-subtle/60 bg-surface-muted/55 p-4 shadow-inner transition-colors dark:border-outline-subtle/70 dark:bg-surface-muted/80">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-sm font-semibold text-ink-800">Reminder</p>
-                  <p className="text-xs text-muted">
+                  <p className="text-sm font-semibold text-ink-700">Reminder</p>
+                  <p className="text-xs text-ink-500 dark:text-ink-400">
                     Schedule a nudge via browser, email, or text.
                   </p>
                 </div>
@@ -442,8 +510,8 @@ export function NoteComposer() {
                   className={clsx(
                     "inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold transition",
                     reminderEnabled
-                      ? "bg-accent-500 text-ink-50"
-                      : "border border-outline-subtle text-ink-500 hover:text-ink-700",
+                      ? "bg-accent-500 text-ink-50 shadow-sm"
+                      : "border border-outline-subtle/60 bg-white/80 text-ink-600 hover:text-ink-800 dark:border-outline-subtle dark:bg-transparent dark:text-ink-400 dark:hover:text-ink-200",
                   )}
                 >
                   <BellRing className="h-3.5 w-3.5" />
@@ -463,7 +531,7 @@ export function NoteComposer() {
                       value={reminderValue}
                       min={formatDateTimeLocalInput(new Date())}
                       onChange={(event) => setReminderValue(event.target.value)}
-                      className="w-full rounded-xl border border-outline-subtle px-3 py-2 text-sm text-ink-700 shadow-sm focus:border-accent-500 focus:outline-none"
+                      className="w-full rounded-xl border border-outline-subtle/60 bg-white/85 px-3 py-2 text-sm text-ink-700 shadow-sm transition-colors focus:border-accent-500 focus:outline-none dark:border-outline-subtle dark:bg-surface-muted/60 dark:text-ink-200"
                     />
                   </label>
 
@@ -474,25 +542,41 @@ export function NoteComposer() {
                     <div className="flex flex-wrap gap-2">
                       {REMINDER_CHANNELS.map(({ id, label, icon: Icon }) => {
                         const isActive = reminderChannels.includes(id);
-                        return (
-                          <button
-                            key={id}
-                            type="button"
-                            onClick={() => handleReminderChannelToggle(id)}
-                            className={clsx(
-                              "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium transition",
-                              isActive
+                        const isSms = id === "sms";
+                        const isDisabled = isSms && !canUseSms;
+                      return (
+                        <button
+                          key={id}
+                          type="button"
+                          disabled={isDisabled}
+                          onClick={() => {
+                            if (isDisabled) {
+                              return;
+                            }
+                            handleReminderChannelToggle(id);
+                          }}
+                          className={clsx(
+                            "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium transition",
+                            isDisabled
+                              ? "cursor-not-allowed border-dashed border-outline-subtle/60 bg-white/60 text-ink-400 opacity-60 dark:border-outline-subtle dark:bg-surface-muted/40 dark:text-ink-500"
+                              : isActive
                                 ? "border-accent-500 bg-accent-100 text-accent-600"
-                                : "border-outline-subtle bg-transparent text-ink-500 hover:text-ink-700",
-                            )}
-                            aria-pressed={isActive}
-                          >
-                            <Icon className="h-3.5 w-3.5" />
-                            {label}
-                          </button>
-                        );
+                                : "border-outline-subtle/60 bg-white/80 text-ink-600 hover:text-ink-800 dark:border-outline-subtle dark:bg-surface-muted/60 dark:text-ink-400 dark:hover:text-ink-200",
+                          )}
+                          aria-pressed={isActive}
+                          aria-disabled={isDisabled}
+                        >
+                          <Icon className="h-3.5 w-3.5" />
+                          {label}
+                        </button>
+                      );
                       })}
                     </div>
+                    {!canUseSms ? (
+                      <p className="text-xs text-muted">
+                        Add your mobile number in settings to unlock text alerts.
+                      </p>
+                    ) : null}
                   </div>
 
                   <div className="grid gap-3 sm:grid-cols-2">
@@ -505,7 +589,7 @@ export function NoteComposer() {
                         onChange={(event) =>
                           setReminderFrequency(event.target.value as ReminderFrequency)
                         }
-                        className="w-full rounded-xl border border-outline-subtle bg-white px-3 py-2 text-sm text-ink-700 shadow-sm focus:border-accent-500 focus:outline-none"
+                        className="w-full rounded-xl border border-outline-subtle/60 bg-white/85 px-3 py-2 text-sm text-ink-700 shadow-sm transition-colors focus:border-accent-500 focus:outline-none dark:border-outline-subtle dark:bg-surface-muted/60 dark:text-ink-200"
                       >
                         {REMINDER_FREQUENCIES.map((option) => (
                           <option key={option.value} value={option.value}>
@@ -524,7 +608,7 @@ export function NoteComposer() {
                           value={customCron}
                           onChange={(event) => setCustomCron(event.target.value)}
                           placeholder="0 9 * * 1-5"
-                          className="w-full rounded-xl border border-outline-subtle px-3 py-2 text-sm text-ink-700 shadow-sm focus:border-accent-500 focus:outline-none"
+                          className="w-full rounded-xl border border-outline-subtle/60 bg-white/85 px-3 py-2 text-sm text-ink-700 shadow-sm transition-colors focus:border-accent-500 focus:outline-none dark:border-outline-subtle dark:bg-surface-muted/60 dark:text-ink-200"
                         />
                       </label>
                     ) : (

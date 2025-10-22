@@ -5,8 +5,8 @@ import {
 } from "firebase/firestore";
 import type { Reminder, ReminderDoc } from "@/lib/types/reminder";
 
-function toDate(value: Timestamp): Date {
-  return value.toDate();
+function toDate(value: Timestamp | null | undefined): Date {
+  return value instanceof Timestamp ? value.toDate() : new Date();
 }
 
 function toOptionalDate(value?: Timestamp | null): Date | null {

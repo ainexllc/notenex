@@ -8,6 +8,7 @@ import {
   Archive,
   CheckSquare,
   Image as ImageIcon,
+  LayoutGrid,
   Palette,
   Pin,
   PinOff,
@@ -24,9 +25,11 @@ import type {
   NoteAttachment,
   NoteColor,
   NoteDraft,
+  NotePattern,
 } from "@/lib/types/note";
 import { useNotes } from "@/components/providers/notes-provider";
 import { NOTE_COLORS } from "@/lib/constants/note-colors";
+import { NOTE_PATTERNS } from "@/lib/constants/note-patterns";
 import { getTextColorForBackground } from "@/lib/utils/note-colors";
 import { useLabels } from "@/components/providers/labels-provider";
 import { useReminders } from "@/components/providers/reminders-provider";
@@ -36,11 +39,7 @@ import type { ReminderChannel } from "@/lib/types/settings";
 import type { CollaboratorRole, NoteCollaborator } from "@/lib/types/note";
 import { getFirebaseAuth } from "@/lib/firebase/client-app";
 import { useAuth } from "@/lib/auth/auth-context";
-import {
-  DEFAULT_REMINDER_CHANNELS,
-  REMINDER_CHANNELS,
-  REMINDER_FREQUENCIES,
-} from "@/components/reminders/reminder-constants";
+import { REMINDER_CHANNELS, REMINDER_FREQUENCIES } from "@/components/reminders/reminder-constants";
 import {
   formatDateTimeLocalInput,
   parseDateTimeLocalInput,
@@ -90,6 +89,7 @@ export function NoteEditor({ note, onClose }: NoteEditorProps) {
     note.checklist,
   );
   const [color, setColor] = useState<NoteColor>(note.color);
+  const [pattern, setPattern] = useState<NotePattern | undefined>(note.pattern || "none");
   const [pinned, setPinned] = useState(note.pinned);
   const [archived, setArchived] = useState(note.archived);
   const [existingAttachments, setExistingAttachments] = useState<NoteAttachment[]>(
@@ -99,6 +99,7 @@ export function NoteEditor({ note, onClose }: NoteEditorProps) {
   const [newAttachments, setNewAttachments] = useState<AttachmentDraft[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [showPalette, setShowPalette] = useState(false);
+  const [showPatternPicker, setShowPatternPicker] = useState(false);
   const [showLabelPicker, setShowLabelPicker] = useState(false);
   const [selectedLabelIds, setSelectedLabelIds] = useState<string[]>(
     note.labelIds ?? [],
@@ -123,6 +124,7 @@ export function NoteEditor({ note, onClose }: NoteEditorProps) {
   const canManageSharing = sessionUser?.id === note.ownerId;
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const editorContainerRef = useRef<HTMLDivElement | null>(null);
   const checklistInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const pendingChecklistFocusId = useRef<string | null>(null);
   const existingReminder = useMemo(() => {
@@ -280,6 +282,7 @@ export function NoteEditor({ note, onClose }: NoteEditorProps) {
     const titleChanged = title !== note.title;
     const bodyChanged = body !== note.body;
     const colorChanged = color !== note.color;
+    const patternChanged = pattern !== note.pattern;
     const pinnedChanged = pinned !== note.pinned;
     const archivedChanged = archived !== note.archived;
     const attachmentsRemoved = removedAttachments.length > 0;
@@ -324,6 +327,7 @@ export function NoteEditor({ note, onClose }: NoteEditorProps) {
       !titleChanged &&
       !bodyChanged &&
       !colorChanged &&
+      !patternChanged &&
       !pinnedChanged &&
       !archivedChanged &&
       !checklistChanged &&
@@ -371,6 +375,10 @@ export function NoteEditor({ note, onClose }: NoteEditorProps) {
 
       if (colorChanged) {
         updates.color = color;
+      }
+
+      if (patternChanged) {
+        updates.pattern = pattern;
       }
 
       if (labelsChanged) {
@@ -459,6 +467,8 @@ export function NoteEditor({ note, onClose }: NoteEditorProps) {
     note.body,
     color,
     note.color,
+    pattern,
+    note.pattern,
     pinned,
     note.pinned,
     archived,
@@ -488,6 +498,7 @@ export function NoteEditor({ note, onClose }: NoteEditorProps) {
     deleteReminder,
     createReminder,
     updateReminder,
+    preferences.reminderChannels,
     onClose,
   ]);
 
@@ -505,6 +516,25 @@ export function NoteEditor({ note, onClose }: NoteEditorProps) {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [handleSave, onClose]);
+
+  useEffect(() => {
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!editorContainerRef.current) {
+        return;
+      }
+
+      if (editorContainerRef.current.contains(event.target as Node)) {
+        return;
+      }
+
+      void handleSave();
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+    };
+  }, [handleSave]);
 
   useEffect(
     () => () => {
@@ -551,9 +581,22 @@ export function NoteEditor({ note, onClose }: NoteEditorProps) {
   }, [checklist]);
 
   const backgroundClass =
-    color === "default" ? "bg-surface-elevated" : `bg-${color}`;
+    color === "default"
+      ? "bg-surface-elevated"
+      : `bg-${color} dark:bg-${color}-dark`;
+
+  const patternClass = pattern && pattern !== "none"
+    ? NOTE_PATTERNS.find((p) => p.id === pattern)?.patternClass || ""
+    : "";
 
   const textColors = getTextColorForBackground(color);
+  const canUseSms = Boolean(preferences.smsNumber?.trim());
+
+  useEffect(() => {
+    if (!canUseSms) {
+      setReminderChannels((prev) => prev.filter((channel) => channel !== "sms"));
+    }
+  }, [canUseSms]);
 
   const checklistTemplate = (): ChecklistItem => ({
     id: crypto.randomUUID(),
@@ -624,14 +667,14 @@ export function NoteEditor({ note, onClose }: NoteEditorProps) {
     );
   };
 
-  
-
   const content = (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-overlay/60 px-3 py-6">
       <div
+        ref={editorContainerRef}
         className={clsx(
-          "relative w-full max-w-2xl rounded-3xl border border-outline-subtle shadow-2xl",
+          "relative w-full max-w-2xl rounded-3xl border border-outline-subtle shadow-2xl dark:shadow-[0_8px_20px_-4px_rgba(249,115,22,0.35)]",
           backgroundClass,
+          patternClass,
         )}
       >
         <div className="flex flex-col gap-4 px-6 py-5">
@@ -824,7 +867,7 @@ export function NoteEditor({ note, onClose }: NoteEditorProps) {
                     }
                     aria-label="Remove checklist item"
                   >
-                    <X className={clsx("h-4 w-4 hover:text-ink-600", color === "note-coal" ? "text-gray-400" : "text-ink-400")} />
+                    <X className="h-4 w-4 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200" />
                   </button>
                 </div>
               ))}
@@ -838,11 +881,11 @@ export function NoteEditor({ note, onClose }: NoteEditorProps) {
             </div>
           )}
 
-          <div className="rounded-2xl border border-outline-subtle/70 bg-white/80 p-4 shadow-sm">
+          <div className="rounded-2xl border border-outline-subtle/60 bg-surface-muted/55 p-4 shadow-inner transition-colors dark:border-outline-subtle/70 dark:bg-surface-muted/80">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-sm font-semibold text-ink-800">Reminder</p>
-                <p className="text-xs text-muted">
+                <p className={clsx("text-sm font-semibold", textColors.title)}>Reminder</p>
+                <p className={clsx("text-xs", textColors.muted)}>
                   Keep this note on schedule with timely nudges.
                 </p>
               </div>
@@ -850,10 +893,10 @@ export function NoteEditor({ note, onClose }: NoteEditorProps) {
                 type="button"
                 onClick={handleReminderToggle}
                 className={clsx(
-                  "inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold transition",
+                  "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold transition",
                   reminderEnabled
-                    ? "bg-accent-500 text-ink-50"
-                    : "border border-outline-subtle text-ink-500 hover:text-ink-700",
+                    ? "border-transparent bg-accent-500 text-ink-50 shadow-sm"
+                    : "border-outline-subtle/60 bg-white/80 text-ink-600 hover:text-ink-800 dark:border-outline-subtle dark:bg-surface-muted/70 dark:text-ink-400 dark:hover:text-ink-200",
                 )}
               >
                 <BellRing className="h-3.5 w-3.5" />
@@ -873,7 +916,10 @@ export function NoteEditor({ note, onClose }: NoteEditorProps) {
                     value={reminderValue}
                     min={formatDateTimeLocalInput(new Date())}
                     onChange={(event) => setReminderValue(event.target.value)}
-                    className="w-full rounded-xl border border-outline-subtle px-3 py-2 text-sm text-ink-700 shadow-sm focus:border-accent-500 focus:outline-none"
+                    className={clsx(
+                      "w-full rounded-xl border border-outline-subtle/60 bg-white/85 px-3 py-2 text-sm shadow-sm transition-colors focus:border-accent-500 focus:outline-none dark:border-outline-subtle dark:bg-surface-muted/60",
+                      textColors.body,
+                    )}
                   />
                 </label>
 
@@ -884,18 +930,29 @@ export function NoteEditor({ note, onClose }: NoteEditorProps) {
                   <div className="flex flex-wrap gap-2">
                     {REMINDER_CHANNELS.map(({ id, label, icon: Icon }) => {
                       const isActive = reminderChannels.includes(id);
+                      const isSms = id === "sms";
+                      const isDisabled = isSms && !canUseSms;
                       return (
                         <button
                           key={id}
                           type="button"
-                          onClick={() => handleReminderChannelToggle(id)}
+                          disabled={isDisabled}
+                          onClick={() => {
+                            if (isDisabled) {
+                              return;
+                            }
+                            handleReminderChannelToggle(id);
+                          }}
                           className={clsx(
                             "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium transition",
-                            isActive
-                              ? "border-accent-500 bg-accent-100 text-accent-600"
-                              : "border-outline-subtle bg-transparent text-ink-500 hover:text-ink-700",
+                            isDisabled
+                              ? "cursor-not-allowed border-dashed border-outline-subtle/60 bg-white/60 text-ink-400 opacity-60 dark:border-outline-subtle dark:bg-surface-muted/40 dark:text-ink-500"
+                              : isActive
+                                ? "border-accent-500 bg-accent-100 text-accent-600"
+                                : "border-outline-subtle/60 bg-white/80 text-ink-600 hover:text-ink-800 dark:border-outline-subtle dark:bg-surface-muted/60 dark:text-ink-400 dark:hover:text-ink-200",
                           )}
                           aria-pressed={isActive}
+                          aria-disabled={isDisabled}
                         >
                           <Icon className="h-3.5 w-3.5" />
                           {label}
@@ -903,6 +960,11 @@ export function NoteEditor({ note, onClose }: NoteEditorProps) {
                       );
                     })}
                   </div>
+                  {!canUseSms ? (
+                    <p className="text-xs text-muted">
+                      Add your mobile number in settings to unlock text alerts.
+                    </p>
+                  ) : null}
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -915,7 +977,7 @@ export function NoteEditor({ note, onClose }: NoteEditorProps) {
                       onChange={(event) =>
                         setReminderFrequency(event.target.value as ReminderFrequency)
                       }
-                      className="w-full rounded-xl border border-outline-subtle bg-white px-3 py-2 text-sm text-ink-700 shadow-sm focus:border-accent-500 focus:outline-none"
+                      className="w-full rounded-xl border border-outline-subtle/60 bg-white/85 px-3 py-2 text-sm text-ink-700 shadow-sm transition-colors focus:border-accent-500 focus:outline-none dark:border-outline-subtle dark:bg-surface-muted/60 dark:text-ink-200"
                     >
                       {REMINDER_FREQUENCIES.map((option) => (
                         <option key={option.value} value={option.value}>
@@ -934,7 +996,7 @@ export function NoteEditor({ note, onClose }: NoteEditorProps) {
                         value={customCron}
                         onChange={(event) => setCustomCron(event.target.value)}
                         placeholder="0 9 * * 1-5"
-                        className="w-full rounded-xl border border-outline-subtle px-3 py-2 text-sm text-ink-700 shadow-sm focus:border-accent-500 focus:outline-none"
+                        className="w-full rounded-xl border border-outline-subtle/60 bg-white/85 px-3 py-2 text-sm text-ink-700 shadow-sm transition-colors focus:border-accent-500 focus:outline-none dark:border-outline-subtle dark:bg-surface-muted/60 dark:text-ink-200"
                       />
                     </label>
                   ) : (
@@ -1099,11 +1161,50 @@ export function NoteEditor({ note, onClose }: NoteEditorProps) {
                   </div>
                 ) : null}
               </div>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPatternPicker((prev) => !prev);
+                    setShowPalette(false);
+                    setShowLabelPicker(false);
+                  }}
+                  className={clsx(
+                    "icon-button h-10 w-10",
+                    showPatternPicker && "bg-accent-100 text-accent-600",
+                  )}
+                  aria-label="Change pattern"
+                >
+                  <LayoutGrid className="h-4 w-4" />
+                </button>
+                {showPatternPicker ? (
+                  <div className="absolute bottom-12 left-1/2 z-30 flex flex-wrap -translate-x-1/2 gap-2 rounded-2xl bg-surface-elevated/95 p-3 shadow-floating backdrop-blur-xl max-w-[220px]">
+                    {NOTE_PATTERNS.map((patternOption) => (
+                      <button
+                        key={patternOption.id}
+                        type="button"
+                        onClick={() => {
+                          setPattern(patternOption.id);
+                          setShowPatternPicker(false);
+                        }}
+                        className={clsx(
+                          "h-10 w-10 rounded-lg border-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-accent-500",
+                          patternOption.previewClass,
+                          patternOption.id === pattern && "ring-2 ring-accent-600",
+                        )}
+                        aria-label={`Set pattern ${patternOption.label}`}
+                        title={patternOption.description}
+                      />
+                    ))}
+                  </div>
+                ) : null}
+              </div>
               <button
                 type="button"
                 onClick={() => {
                   setShowLabelPicker((prev) => !prev);
                   setShowPalette(false);
+                  setShowPatternPicker(false);
                 }}
                 className={clsx(
                   "icon-button h-10 w-10",

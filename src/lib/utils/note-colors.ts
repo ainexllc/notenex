@@ -1,8 +1,8 @@
 import type { NoteColor } from "@/lib/types/note";
 
 /**
- * Determines if a note color should use dark text (for light backgrounds)
- * or light text (for dark backgrounds), similar to Google Keep's approach.
+ * Determines text colors for note backgrounds.
+ * Light theme uses dark gray text, dark theme uses white text.
  */
 export function getTextColorForBackground(color: NoteColor): {
   title: string;
@@ -10,31 +10,11 @@ export function getTextColorForBackground(color: NoteColor): {
   muted: string;
   placeholder: string;
 } {
-  // Dark background colors need light text
-  if (color === "note-coal") {
-    return {
-      title: "text-white",
-      body: "text-gray-200",
-      muted: "text-gray-300",
-      placeholder: "placeholder:text-gray-400",
-    };
-  }
-
-  // Light background colors (including white) need dark text
-  if (color !== "default") {
-    return {
-      title: "text-gray-900",
-      body: "text-gray-800",
-      muted: "text-gray-700",
-      placeholder: "placeholder:text-gray-600",
-    };
-  }
-
-  // Default uses theme-based colors
+  // All colors use dark gray text in light theme, white text in dark theme
   return {
-    title: "text-ink-800",
-    body: "text-ink-700",
-    muted: "text-ink-500",
-    placeholder: "placeholder:text-ink-400",
+    title: "text-gray-900 dark:text-white",
+    body: "text-gray-800 dark:text-white",
+    muted: "text-gray-700 dark:text-gray-300",
+    placeholder: "placeholder:text-gray-600 dark:placeholder:text-gray-400",
   };
 }

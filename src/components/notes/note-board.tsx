@@ -65,8 +65,9 @@ export function NoteBoard() {
           {others.length ? (
             <section className="space-y-4">
               {pinned.length ? (
-                <header className="text-xs font-semibold uppercase tracking-wide text-ink-400">
-                  Others
+                <header className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-ink-400">
+                  <span>All Notes</span>
+                  <span>{others.length}</span>
                 </header>
               ) : null}
               <div className="note-board-columns">

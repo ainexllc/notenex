@@ -2,15 +2,17 @@
 
 import { useState } from "react";
 import {
-  Bell,
   Menu,
   Search,
   ChevronDown,
+  Sparkles,
+  X,
 } from "lucide-react";
 import { clsx } from "clsx";
 import Image from "next/image";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useTheme } from "@/components/providers/theme-provider";
+import { useNotes } from "@/components/providers/notes-provider";
 import { LogoWordmark } from "@/components/branding/logo-wordmark";
 import { ProfileDropdown } from "./profile-dropdown";
 
@@ -18,7 +20,8 @@ type TopNavProps = {
   onMenuClick?: () => void;
   onRefresh?: () => void;
   onOpenSettings?: () => void;
-  onOpenNotifications?: () => void;
+  onOpenActivity?: () => void;
+  onOpenAiAssistant?: () => void;
   onSearchFocus?: () => void;
 };
 
@@ -26,11 +29,13 @@ export function TopNav({
   onMenuClick,
   onRefresh,
   onOpenSettings,
-  onOpenNotifications,
+  onOpenActivity,
+  onOpenAiAssistant,
   onSearchFocus,
 }: TopNavProps) {
   const { status, user, signInWithGoogle } = useAuth();
   const { theme } = useTheme();
+  const { searchQuery, setSearchQuery } = useNotes();
   const [isProfileOpen, setProfileOpen] = useState(false);
 
 
@@ -51,7 +56,7 @@ export function TopNav({
   return (
     <header
       className={clsx(
-        "sticky top-0 z-30 backdrop-blur-2xl shadow-[0_18px_45px_-30px_rgba(0,0,0,0.2)] transition-colors",
+        "fixed inset-x-0 top-0 z-30 backdrop-blur-2xl shadow-[0_8px_30px_-12px_rgba(0,0,0,0.3)] dark:shadow-[0_4px_16px_-4px_rgba(249,115,22,0.3)] transition-colors",
         navBackgroundClass,
       )}
     >
@@ -77,10 +82,22 @@ export function TopNav({
           <Search className="top-nav-search-icon h-4 w-4 text-ink-500 shrink-0" aria-hidden />
           <input
             type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search notes..."
             className="top-nav-search-input w-full bg-transparent text-sm text-ink-800 placeholder:text-ink-500 focus:outline-none"
             onFocus={() => onSearchFocus?.()}
           />
+          {searchQuery && (
+            <button
+              type="button"
+              className="icon-button h-6 w-6 rounded-full text-ink-500 hover:bg-surface-muted hover:text-ink-700 shrink-0"
+              aria-label="Clear search"
+              onClick={() => setSearchQuery("")}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
           <button
             type="button"
             className="top-nav-search-button icon-button h-8 w-8 rounded-full bg-surface-muted/70 text-ink-600 hover:bg-surface-muted shrink-0"
@@ -93,14 +110,14 @@ export function TopNav({
 
         {/* Right: Actions (right-justified) */}
         <div className="ml-auto flex items-center gap-2 top-nav-actions">
-          {onOpenNotifications && (
+          {onOpenAiAssistant && (
             <button
               type="button"
-              onClick={() => onOpenNotifications()}
-              className="icon-button h-9 w-9 rounded-full bg-surface-muted/80 shadow-sm transition hover:bg-surface-muted"
-              aria-label="Notifications"
+              onClick={() => onOpenAiAssistant()}
+              className="icon-button h-9 w-9 rounded-full bg-purple-100 text-purple-600 shadow-sm transition hover:bg-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:hover:bg-purple-900/50"
+              aria-label="AI Assistant"
             >
-              <Bell className="h-4 w-4" />
+              <Sparkles className="h-4 w-4" />
             </button>
           )}
 
@@ -134,6 +151,10 @@ export function TopNav({
                 onOpenSettings={() => {
                   setProfileOpen(false);
                   onOpenSettings?.();
+                }}
+                onOpenActivity={() => {
+                  setProfileOpen(false);
+                  onOpenActivity?.();
                 }}
                 onRefresh={() => {
                   setProfileOpen(false);

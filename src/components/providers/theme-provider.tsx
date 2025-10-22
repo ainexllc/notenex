@@ -69,6 +69,8 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     root.dataset.theme = theme;
     body.dataset.theme = theme;
 
+    // Use 'dark' class for Tailwind dark mode
+    root.classList.toggle("dark", theme === "dark");
     root.classList.toggle("theme-dark", theme === "dark");
     root.classList.toggle("theme-light", theme === "light");
 

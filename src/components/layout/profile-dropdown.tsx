@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useEffect } from "react";
-import { Settings, Moon, Sun, RefreshCw, LogOut } from "lucide-react";
+import { Settings, Moon, Sun, RefreshCw, LogOut, Activity } from "lucide-react";
 import { clsx } from "clsx";
 import Image from "next/image";
 import { useTheme } from "@/components/providers/theme-provider";
@@ -11,10 +11,11 @@ type ProfileDropdownProps = {
   isOpen: boolean;
   onClose: () => void;
   onOpenSettings: () => void;
+  onOpenActivity: () => void;
   onRefresh: () => void;
 };
 
-export function ProfileDropdown({ isOpen, onClose, onOpenSettings, onRefresh }: ProfileDropdownProps) {
+export function ProfileDropdown({ isOpen, onClose, onOpenSettings, onOpenActivity, onRefresh }: ProfileDropdownProps) {
   const { theme, toggleTheme } = useTheme();
   const { user, signOut } = useAuth();
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -51,6 +52,11 @@ export function ProfileDropdown({ isOpen, onClose, onOpenSettings, onRefresh }: 
 
   const handleSettings = () => {
     onOpenSettings();
+    onClose();
+  };
+
+  const handleActivity = () => {
+    onOpenActivity();
     onClose();
   };
 
@@ -110,6 +116,15 @@ export function ProfileDropdown({ isOpen, onClose, onOpenSettings, onRefresh }: 
         >
           <Settings className="h-4 w-4" />
           <span>Settings</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={handleActivity}
+          className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-ink-600 hover:bg-surface-muted hover:text-ink-900 transition-colors"
+        >
+          <Activity className="h-4 w-4" />
+          <span>Activity</span>
         </button>
 
         <div className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm text-ink-600 hover:bg-surface-muted hover:text-ink-900 transition-colors">

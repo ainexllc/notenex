@@ -4,6 +4,7 @@ export type ReminderChannel = "email" | "sms" | "push";
 
 export type UserPreferenceDoc = {
   reminderChannels: ReminderChannel[];
+  smsNumber?: string | null;
   quietHoursStart?: string | null;
   quietHoursEnd?: string | null;
   digestEnabled: boolean;
@@ -17,4 +18,5 @@ export type UserPreference = Omit<UserPreferenceDoc, "createdAt" | "updatedAt"> 
   id: string;
   createdAt: Date;
   updatedAt: Date;
+  smsNumber: string | null;
 };

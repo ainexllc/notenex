@@ -20,6 +20,7 @@ import { NOTE_PATTERNS } from "@/lib/constants/note-patterns";
 import { NoteEditor } from "@/components/notes/note-editor";
 import { useLabels } from "@/components/providers/labels-provider";
 import { getTextColorForBackground } from "@/lib/utils/note-colors";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 
 type NoteCardProps = {
   note: Note;
@@ -31,6 +32,8 @@ export function NoteCard({ note }: NoteCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [showPalette, setShowPalette] = useState(false);
   const [showPatternPicker, setShowPatternPicker] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const labelMap = useMemo(() => {
     return new Map(labels.map((label) => [label.id, label]));
   }, [labels]);
@@ -42,7 +45,9 @@ export function NoteCard({ note }: NoteCardProps) {
   }, [note.labelIds, labelMap]);
 
   const backgroundClass =
-    note.color === "default" ? "bg-surface-elevated" : `bg-${note.color}`;
+    note.color === "default"
+      ? "bg-surface-elevated"
+      : `bg-${note.color} dark:bg-${note.color}-dark`;
 
   const patternClass = note.pattern && note.pattern !== "none"
     ? NOTE_PATTERNS.find((p) => p.id === note.pattern)?.patternClass || ""
@@ -50,9 +55,30 @@ export function NoteCard({ note }: NoteCardProps) {
 
   const textColors = getTextColorForBackground(note.color);
 
-  const handleDelete = async (event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleDeleteClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
-    await deleteNote(note.id);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (isDeleting) {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      await deleteNote(note.id);
+      setShowDeleteConfirm(false);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    if (isDeleting) {
+      return;
+    }
+    setShowDeleteConfirm(false);
   };
 
   const handleArchive = async (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -105,7 +131,7 @@ export function NoteCard({ note }: NoteCardProps) {
     <>
       <article
         className={clsx(
-          "group relative cursor-pointer break-inside-avoid overflow-visible rounded-3xl px-5 py-4 shadow-lg transition hover:shadow-2xl",
+          "group relative cursor-pointer break-inside-avoid overflow-visible rounded-3xl border-2 border-transparent px-5 py-4 shadow-lg transition hover:border-orange-500 dark:shadow-none",
           backgroundClass,
           patternClass,
         )}
@@ -117,8 +143,8 @@ export function NoteCard({ note }: NoteCardProps) {
           type="button"
           onClick={handlePin}
           className={clsx(
-            "absolute right-4 top-4 hidden rounded-full bg-white/70 p-2 text-ink-500 shadow-sm transition group-hover:flex",
-            note.pinned && "text-accent-600",
+            "absolute right-4 top-4 hidden rounded-full bg-white/70 p-2 text-gray-700 shadow-sm transition group-hover:flex dark:bg-gray-800/70 dark:text-gray-200",
+            note.pinned && "text-accent-600 dark:text-accent-400",
           )}
           aria-label={note.pinned ? "Unpin note" : "Pin note"}
         >
@@ -147,10 +173,10 @@ export function NoteCard({ note }: NoteCardProps) {
                   key={item.id}
                   className={clsx(
                     "flex items-start gap-2 text-sm",
-                    item.completed ? textColors.muted + " line-through" : textColors.body,
+                    item.completed ? `${textColors.muted} line-through` : textColors.body,
                   )}
                 >
-                  <span className={clsx("mt-1 h-2 w-2 rounded-full", note.color === "note-coal" ? "bg-gray-400" : "bg-ink-300")} />
+                  <span className="mt-1 h-2 w-2 rounded-full bg-gray-700 dark:bg-gray-400" />
                   <span>{item.text}</span>
                 </li>
               ))}
@@ -213,7 +239,7 @@ export function NoteCard({ note }: NoteCardProps) {
         <footer className="mt-4 flex items-center justify-between pt-2">
           <div className={clsx("flex items-center gap-2 text-[11px] uppercase tracking-wide", textColors.muted)}>
             {note.sharedWithUserIds?.length ? (
-              <span className={clsx("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide", note.color === "note-coal" ? "bg-gray-700 text-gray-300" : "bg-surface-muted text-ink-600")}>
+              <span className="inline-flex items-center gap-1 rounded-full bg-surface-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gray-800 dark:bg-gray-700 dark:text-gray-300">
                 <Users className="h-3 w-3" />
                 {note.sharedWithUserIds.length}
               </span>
@@ -298,7 +324,7 @@ export function NoteCard({ note }: NoteCardProps) {
             </div>
             <button
               type="button"
-              onClick={handleDelete}
+              onClick={handleDeleteClick}
               className="icon-button h-9 w-9 text-danger"
               aria-label="Delete note"
             >
@@ -311,6 +337,16 @@ export function NoteCard({ note }: NoteCardProps) {
       {isEditing ? (
         <NoteEditor note={note} onClose={() => setIsEditing(false)} />
       ) : null}
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        title="Delete this note?"
+        message="This will move the note to the Trash. You can restore it from there within the next 30 days."
+        confirmLabel="Delete note"
+        cancelLabel="Keep note"
+        isProcessing={isDeleting}
+        onCancel={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+      />
     </>
   );
 }

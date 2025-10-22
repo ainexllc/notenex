@@ -7,27 +7,36 @@ import { clsx } from "clsx";
 import { NavigationPanel } from "./navigation-panel";
 import { TopNav } from "./top-nav";
 import { useNotes } from "@/components/providers/notes-provider";
+import { usePreferences } from "@/components/providers/preferences-provider";
 import { formatRelativeTime } from "@/lib/utils/datetime";
 import {
   BellRing,
   CheckCircle2,
   ListChecks,
   MessageSquarePlus,
+  Sparkles,
+  Send,
 } from "lucide-react";
+import { SettingsPanel } from "./settings-panel";
 
 type AppShellProps = {
   children: React.ReactNode;
 };
 
-type ActivePanel = "notifications" | "settings" | null;
+type ActivePanel = "notifications" | "settings" | "ai-assistant" | null;
 
 
 const overlayPanelStyles =
-  "pointer-events-auto w-full max-w-sm rounded-3xl bg-surface-elevated/95 p-6 shadow-2xl backdrop-blur-xl";
+  "pointer-events-auto w-full max-w-lg rounded-3xl bg-surface-elevated/95 p-6 shadow-2xl backdrop-blur-xl";
 
 export function AppShell({ children }: AppShellProps) {
   const router = useRouter();
   const { allNotes, pinned, others, loading } = useNotes();
+  const {
+    preferences,
+    updatePreferences,
+    loading: preferencesLoading,
+  } = usePreferences();
   const [isNavOpen, setNavOpen] = useState(false);
   const [activePanel, setActivePanel] = useState<ActivePanel>(null);
 
@@ -76,10 +85,12 @@ export function AppShell({ children }: AppShellProps) {
           onMenuClick={() => setNavOpen((prev) => !prev)}
           onRefresh={handleRefresh}
           onOpenSettings={() => togglePanel("settings")}
-          onOpenNotifications={() => togglePanel("notifications")}
+          onOpenAiAssistant={() => togglePanel("ai-assistant")}
+          onOpenActivity={() => togglePanel("notifications")}
         />
+        <div className="pointer-events-none fixed inset-x-0 top-16 z-20 h-3 bg-gradient-to-b from-orange-400/45 via-orange-400/15 to-transparent blur-md" />
 
-        <main className="flex-1 overflow-x-hidden">
+        <main className="flex-1 overflow-x-hidden pt-16">
           <div className="centered-shell">
             {children}
           </div>
@@ -201,6 +212,74 @@ export function AppShell({ children }: AppShellProps) {
                       Close
                     </button>
                   </footer>
+                </div>
+              ) : activePanel === "settings" ? (
+                <SettingsPanel
+                  preferences={preferences}
+                  isLoading={preferencesLoading}
+                  onUpdate={updatePreferences}
+                  onClose={() => setActivePanel(null)}
+                />
+              ) : activePanel === "ai-assistant" ? (
+                <div className="flex h-full flex-col space-y-4">
+                  <header className="space-y-1">
+                    <div className="inline-flex items-center gap-2 rounded-full bg-purple-100 px-3 py-1 text-xs font-medium text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
+                      <Sparkles className="h-3.5 w-3.5" />
+                      AI Assistant
+                    </div>
+                    <h2 className="text-lg font-semibold text-ink-800">
+                      How can I help?
+                    </h2>
+                    <p className="text-sm text-muted">
+                      Ask me anything about your notes, get summaries, or find what you need.
+                    </p>
+                  </header>
+
+                  <div className="flex-1 space-y-3 overflow-y-auto rounded-2xl bg-surface-muted/40 p-4">
+                    <div className="rounded-xl bg-white/60 px-4 py-3 shadow-sm dark:bg-surface-elevated/60">
+                      <p className="text-sm font-medium text-ink-700">
+                        💡 Suggested prompts
+                      </p>
+                      <ul className="mt-2 space-y-2 text-sm text-muted">
+                        <li className="cursor-pointer rounded-lg bg-surface-muted/60 px-3 py-2 transition hover:bg-surface-muted">
+                          Summarize my recent notes
+                        </li>
+                        <li className="cursor-pointer rounded-lg bg-surface-muted/60 px-3 py-2 transition hover:bg-surface-muted">
+                          Find notes about work projects
+                        </li>
+                        <li className="cursor-pointer rounded-lg bg-surface-muted/60 px-3 py-2 transition hover:bg-surface-muted">
+                          What reminders do I have today?
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Ask me anything..."
+                        className="flex-1 rounded-xl border border-outline-subtle bg-white px-4 py-2 text-sm text-ink-700 shadow-sm focus:border-accent-500 focus:outline-none dark:bg-surface-elevated"
+                      />
+                      <button
+                        type="button"
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-accent-500 text-white shadow-sm transition hover:bg-accent-400"
+                        aria-label="Send message"
+                      >
+                        <Send className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <footer className="flex items-center justify-between text-xs text-muted">
+                      <span>Powered by AI</span>
+                      <button
+                        type="button"
+                        className="font-semibold text-accent-600 hover:text-accent-700"
+                        onClick={() => setActivePanel(null)}
+                      >
+                        Close
+                      </button>
+                    </footer>
+                  </div>
                 </div>
               ) : null}
             </div>

@@ -36,6 +36,7 @@ import type {
   NoteDraft,
   NoteType,
   NoteColor,
+  NotePattern,
 } from "@/lib/types/note";
 import { getFirebaseStorage } from "@/lib/firebase/client-app";
 
@@ -82,6 +83,7 @@ export async function createNote(
     type?: NoteType;
     checklist?: ChecklistItem[];
     color?: NoteColor;
+    pattern?: NotePattern;
     pinned?: boolean;
     archived?: boolean;
     labelIds?: string[];
@@ -124,6 +126,10 @@ export async function updateNote(
 
   if (updates.color !== undefined) {
     payload.color = updates.color;
+  }
+
+  if (updates.pattern !== undefined) {
+    payload.pattern = updates.pattern;
   }
 
   if (updates.labelIds !== undefined) {

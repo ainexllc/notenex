@@ -32,7 +32,7 @@ export function LogoWordmark({
       style={{ fontSize: `${fontSize}px`, letterSpacing: `${letterSpacing}px` }}
     >
       <span className="text-orange-500">Note</span>
-      <span className={clsx(isLight ? "text-ink-900" : "text-white")}>Ne</span>
+      <span className={clsx(isLight ? "text-ink-900" : "text-white")} style={{ paddingRight: '1px' }}>Ne</span>
       <span
         className="relative inline-block"
         style={{

@@ -32,7 +32,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" data-theme="dark" className="theme-dark">
+    <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${kanit.variable} bg-surface-base text-ink-900 antialiased transition-colors duration-300`}
       >
