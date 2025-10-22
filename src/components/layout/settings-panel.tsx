@@ -153,9 +153,9 @@ export function SettingsPanel({ preferences, isLoading, onUpdate, onClose }: Set
 
     setPhoneSaveState("saving");
     try {
-      const nextChannels = preferences.reminderChannels.includes("sms")
+      const nextChannels: ReminderChannel[] = preferences.reminderChannels.includes("sms")
         ? [...preferences.reminderChannels]
-        : [...preferences.reminderChannels, "sms"];
+        : [...preferences.reminderChannels, "sms" as ReminderChannel];
 
       await onUpdate({
         smsNumber: normalized,
