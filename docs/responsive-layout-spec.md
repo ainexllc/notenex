@@ -1,68 +1,123 @@
 # NoteNex Responsive Workspace Spec
 
+**Version**: 2.0
+**Last Updated**: October 2025
+
+## Version 2.0 Changes
+- **Centered Container Architecture**: Replaced multi-column grid with single centered container (max-width 1280px)
+- **Navigation Overlay Pattern**: Navigation opens as slide-in overlay instead of permanent sidebar
+- **Simplified Top Nav**: Reduced from 7-8 icons to 3-4 (hamburger, search, notifications, profile)
+- **Profile Dropdown**: Consolidated settings, theme, refresh, and sign-out into single menu
+- **Full-Width Mobile**: Content spans full viewport on mobile, centered with padding on desktop
+
 ## Goals
-- Deliver a document-centric workspace that always prioritizes the editing canvas while scaling supporting tools with available real estate.
-- Preserve core editing capability across every device; larger viewports unlock additional panels rather than altering fundamentals.
-- Use fluid layouts (CSS Grid, flex, container queries) instead of hard-coded breakpoints so components adapt gracefully to both mobile portrait and ultra-wide desktop screens.
+- Deliver a content-centric experience with everything in one centered container
+- Prioritize editing canvas by removing permanent sidebars and multi-column layouts
+- Use overlay panels (navigation, notifications) for secondary actions
+- Maintain consistency across all screen sizes with responsive centering
 
 ## Viewport Tiers
 | Token | Range (shortest edge) | Layout posture | Primary unlocks |
 | ----- | --------------------- | -------------- | ---------------- |
-| `XS`  | `< 480px`             | Single column  | Essential toolbar, collapsible utility tray |
-| `SM`  | `480–767px`           | Single column  | Ribbon toggle, swipeable inspector, inline comments |
-| `MD`  | `768–1199px`          | Two column     | Persistent inspector, full ribbon, quick actions |
-| `LG`  | `1200–1599px`         | Three column   | Activity/history rail, secondary toolbar row |
-| `XL`  | `≥ 1600px`            | Multi-pane     | Dockable palettes, split document view, analytics |
+| `XS`  | `< 480px`             | Full-width     | Edge-to-edge content, hamburger nav overlay |
+| `SM`  | `480–767px`           | Full-width     | Search bar expands, logo visible |
+| `MD`  | `768–1023px`          | Full-width     | Full search input, all nav icons visible |
+| `LG`  | `1024–1279px`         | Centered       | Container centered (max 1280px), desktop padding |
+| `XL`  | `≥ 1280px`            | Centered       | Full container width, visible background |
 
-> Orientation switch uses the shortest edge to determine the tier so large tablets in portrait fall back to the tier that ensures readability.
+> The centered container (max-width 1280px) is the primary content area. On mobile (< 1024px), it spans full viewport width. On desktop (≥ 1024px), it's centered with horizontal padding and visible background.
 
-## Wireframe Notes by Tier
-- **XS**  
-  - Sticky top bar with logo, document title dropdown, quick capture button, overflow menu.  
-  - Document canvas spans full width with gutters handled via internal padding.  
-  - Bottom sheet houses formatting controls, inspector, and comments (keeps actions reachable by thumb).  
-  - Floating chips for filters/labels replace sidebar.
+## Layout Structure
 
-- **SM**  
-  - Similar to XS but introduce collapsible ribbon above canvas (icon-only, swipe to reveal).  
-  - Comments + inspector accessed through a right-edge drawer triggered by swipe or button.  
-  - Footer status compresses to a pill with word count + presence indicator.
+### All Screen Sizes
+```
+┌─────────────────────────────────────┐
+│  Top Nav: [≡] Logo Search [🔔][👤] │ ← Sticky, always visible
+├─────────────────────────────────────┤
+│         Background (desktop)         │
+│  ┌───────────────────────────────┐  │
+│  │   Centered Container          │  │ ← max-width 1280px
+│  │   (Content Area)              │  │
+│  │                               │  │
+│  │   Note Board / Archive / etc  │  │
+│  │                               │  │
+│  └───────────────────────────────┘  │
+│                                     │
+│  [Feedback Button] bottom-left      │
+└─────────────────────────────────────┘
+```
 
-- **MD**  
-  - Grid: `left gutter (min 72px)` + `primary column` + `context column (360px)`.  
-  - Top ribbon pinned under header with grouped actions (text, insert, layout, AI).  
-  - Context column hosts inspector tabs (styles, comments, AI suggestions).  
-  - Sidebar overlays when invoked, sized 288px, collapses when clicking canvas.
+### Overlay Panels (On Demand)
+- **Navigation Panel**: Slides in from left (280px wide), triggered by hamburger button
+- **Notifications Panel**: Slides in from right (max-w-sm), triggered by bell icon
+- **Profile Dropdown**: Drops down from profile button (256px wide)
 
-- **LG**  
-  - Grid: `nav sidebar 80px collapsed/320px expanded` + `canvas` + `context` + `utility`.  
-  - Left nav can collapse to icon rail; right utility column (280px) exposes history, tasks, integrations.  
-  - Secondary toolbar row surfaces advanced formatting, automation scripts, and collaboration tools.
+## Responsive Behavior by Tier
 
-- **XL**  
-  - Workspace switches to adjustable panes: left nav, primary canvas (max 1200px per doc view), optional second canvas (compare/split), context stack, floating palettes.  
-  - Panels can undock into modal windows; analytics dashboard (engagement, AI summaries) available in right-most column.
+- **Mobile (< 1024px)**
+  - Container: full-width, edge-to-edge
+  - Padding: 0 (content manages its own padding)
+  - Navigation: hamburger opens overlay panel
+  - Top Nav: Logo hidden on XS, visible SM+
+  - Search: icon-only on XS, full input SM+
+
+- **Desktop (≥ 1024px)**
+  - Container: centered, max-width 1280px
+  - Padding: 1.5rem horizontal, 2rem vertical
+  - Background: visible around container
+  - Navigation: hamburger always visible, opens overlay
+  - Top Nav: all elements visible
+  - Search: full input with icon
 
 ## Core Regions & Behavior
-- **Header**: Always visible. Contains product navigation, document switcher, global search, collaboration menu. Icon-only in XS/SM, labeled buttons MD+.  
-- **Ribbon / Tool Shelf**:  
-  - XS/SM: collapsible pill menu with most-used actions; “More” sheet reveals advanced tools.  
-  - MD+: persistent horizontal bar grouped into Format, Insert, Automations, AI. Secondary row toggles at LG+.  
-- **Document Canvas**:  
-  - Centered with fluid max width (container queries adapt padding).  
-  - Snap guides and page outlines appear MD+; XS/SM rely on simple padding.  
-  - Zoom control accessible at all tiers (toolbar button + pinch).  
-- **Context Sidebar**:  
-  - Hidden behind floating action (XS/SM).  
-  - MD: docked right column with tabbed inspector.  
-  - LG+: persists and can split into stacked panels (Inspector, Comments, AI).  
-- **Utility Panels**:  
-  - Comments/chat, version history, extensions.  
-  - Modal/bottom sheet at XS/SM; third column dock at LG; multi-pane at XL.  
-- **Footer Status**:  
-  - XS/SM: condensed pill toggles detail tray.  
-  - MD+: persistent bar with word count, connectivity, collaborators.  
-  - LG+: adds AI suggestions ticker, automation diagnostics.
+
+### Top Navigation Bar
+- **Position**: Sticky top, always visible, z-index 30
+- **Height**: 64px (h-16)
+- **Content** (left to right):
+  1. **Hamburger Menu**: Opens navigation overlay panel (always visible)
+  2. **Logo**: Hidden on XS, visible SM+ (hidden sm:block)
+  3. **Search Bar**: Icon-only on XS, full input SM+
+  4. **Notifications**: Bell icon, opens notification overlay panel
+  5. **Profile**: Avatar + chevron, opens profile dropdown menu
+
+### Centered Container (`.centered-shell`)
+- **Purpose**: Main content area for all pages
+- **Max Width**: 1280px
+- **Mobile**: Full-width, no padding (edge-to-edge)
+- **Desktop**: Centered with padding (1.5rem horizontal, 2rem vertical)
+- **Background**: Visible on desktop around container
+
+### Navigation Overlay Panel
+- **Trigger**: Hamburger button in top nav
+- **Width**: 280px
+- **Position**: Fixed left, slides in from left edge
+- **Animation**: 300ms ease-out transform
+- **Z-index**: 40
+- **Backdrop**: Semi-transparent with blur (z-30)
+- **Sections**: Workspace, Utilities, Labels
+- **Close**: Click backdrop, press Escape, or click nav item
+
+### Profile Dropdown Menu
+- **Trigger**: Profile button in top nav
+- **Width**: 256px
+- **Position**: Absolute, drops down from profile button
+- **Animation**: 150ms fade-in + slide-down
+- **Z-index**: 50
+- **Contents**:
+  - User info header
+  - Settings (opens settings overlay)
+  - Theme toggle (inline switch)
+  - Refresh route
+  - Sign out
+
+### Notification Panel
+- **Trigger**: Bell icon in top nav
+- **Width**: max-w-sm (384px)
+- **Position**: Fixed right, slides in from right edge
+- **Animation**: Same as navigation panel
+- **Z-index**: 40
+- **Contents**: Recent activity feed, reminders
 
 ## Adaptive Patterns
 - Progressive disclosure hides advanced formatting, automations, and analytics on smaller tiers—accessible via command palette (`⌘K` / `Ctrl+K`) or overflow menus.

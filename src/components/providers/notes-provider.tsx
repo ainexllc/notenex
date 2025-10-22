@@ -278,6 +278,11 @@ export function NotesProvider({ children }: NotesProviderProps) {
     const hasLabelFilter = activeLabelIds.length > 0;
 
     const filtered = merged.filter((note) => {
+      // Exclude archived notes from workspace view
+      if (note.archived) {
+        return false;
+      }
+
       const matchesLabels = !hasLabelFilter
         ? true
         : activeLabelIds.some((labelId) => note.labelIds.includes(labelId));

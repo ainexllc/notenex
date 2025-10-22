@@ -47,7 +47,6 @@ export function subscribeToOwnedNotes(
 ): Unsubscribe {
   const notesRef = query(
     clientNoteCollection(userId).withConverter(noteConverter),
-    where("archived", "==", false),
     orderBy("pinned", "desc"),
     orderBy("updatedAt", "desc"),
   );
@@ -64,7 +63,6 @@ export function subscribeToSharedNotes(
 ): Unsubscribe {
   const sharedRef = query(
     collectionGroup(getFirebaseFirestore(), "notes").withConverter(noteConverter),
-    where("archived", "==", false),
     where("sharedWithUserIds", "array-contains", userId),
     orderBy("pinned", "desc"),
     orderBy("updatedAt", "desc"),

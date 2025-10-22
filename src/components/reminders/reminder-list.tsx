@@ -147,7 +147,7 @@ export function ReminderList() {
     <section className="space-y-3">
       <header className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-ink-400">
         <span>{label}</span>
-        <span>{items.length}</span>
+        {items.length > 0 && <span>{items.length}</span>}
       </header>
 
       {items.length ? (

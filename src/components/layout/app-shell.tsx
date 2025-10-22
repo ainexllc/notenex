@@ -1,27 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { clsx } from "clsx";
-import { Sidebar } from "./sidebar";
+import { NavigationPanel } from "./navigation-panel";
 import { TopNav } from "./top-nav";
-import { Container } from "./container";
-import { QUICK_CAPTURE_EVENT } from "@/lib/constants/events";
 import { useNotes } from "@/components/providers/notes-provider";
-import { PRIMARY_NAV_ITEMS, SECONDARY_NAV_ITEMS } from "@/lib/constants/navigation";
-import { usePreferences } from "@/components/providers/preferences-provider";
 import { formatRelativeTime } from "@/lib/utils/datetime";
 import {
   BellRing,
   CheckCircle2,
-  Inbox,
-  Lightbulb,
   ListChecks,
-  Settings2,
-  Sparkles,
-  Users,
   MessageSquarePlus,
 } from "lucide-react";
 
@@ -29,27 +19,16 @@ type AppShellProps = {
   children: React.ReactNode;
 };
 
-type ActivePanel = "notifications" | "settings" | "workspace" | null;
+type ActivePanel = "notifications" | "settings" | null;
 
 
 const overlayPanelStyles =
   "pointer-events-auto w-full max-w-sm rounded-3xl bg-surface-elevated/95 p-6 shadow-2xl backdrop-blur-xl";
 
-const WORKSPACE_DESCRIPTIONS: Record<string, string> = {
-  "/workspace": "Your main board for capturing and organizing notes.",
-  "/reminders": "Plan nudges so important notes resurface on time.",
-  "/focus": "Deep work canvas with ambient timers and noise.",
-  "/shared": "Collaborate in real-time with teammates and partners.",
-  "/ideas": "Experiment with AI-assisted brainstorming workflows.",
-  "/archive": "Reference shelved notes without cluttering your board.",
-  "/trash": "Review and restore anything deleted in the last 30 days.",
-};
-
 export function AppShell({ children }: AppShellProps) {
   const router = useRouter();
   const { allNotes, pinned, others, loading } = useNotes();
-  const { preferences, updatePreferences, loading: preferencesLoading } = usePreferences();
-  const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const [isNavOpen, setNavOpen] = useState(false);
   const [activePanel, setActivePanel] = useState<ActivePanel>(null);
 
   useEffect(() => {
@@ -66,29 +45,13 @@ export function AppShell({ children }: AppShellProps) {
     return () => document.removeEventListener("keydown", handleEscape);
   }, [activePanel]);
 
-  const handleQuickCapture = useCallback(() => {
-    document.dispatchEvent(new CustomEvent(QUICK_CAPTURE_EVENT));
-    setActivePanel(null);
-  }, []);
-
   const handleRefresh = useCallback(() => {
     router.refresh();
-    setActivePanel(null);
   }, [router]);
 
   const togglePanel = useCallback((panel: Exclude<ActivePanel, null>) => {
     setActivePanel((prev) => (prev === panel ? null : panel));
   }, []);
-
-  const toggleSetting = useCallback(
-    (key: "smartSuggestions" | "digestEnabled" | "focusModePinned") => {
-      if (preferencesLoading) {
-        return;
-      }
-      void updatePreferences({ [key]: !preferences[key] });
-    },
-    [preferences, preferencesLoading, updatePreferences],
-  );
 
   const activityFeed = useMemo(() => {
     if (!allNotes.length) {
@@ -106,46 +69,42 @@ export function AppShell({ children }: AppShellProps) {
       }));
   }, [allNotes]);
 
-  const workspaceShortcuts = useMemo(
-    () =>
-      [...PRIMARY_NAV_ITEMS, ...SECONDARY_NAV_ITEMS].map((item) => ({
-        ...item,
-        description: WORKSPACE_DESCRIPTIONS[item.href] ?? "",
-      })),
-    [],
-  );
-
   return (
-    <div className="relative min-h-screen overflow-hidden bg-surface-base cq-shell">
+    <div className="relative min-h-screen overflow-hidden bg-surface-base">
       <div className="relative z-10 flex min-h-screen flex-col text-ink-900">
-      <TopNav
-        onMenuClick={() => setSidebarOpen((prev) => !prev)}
-        onRefresh={handleRefresh}
-        onOpenSettings={() => togglePanel("settings")}
-        onOpenWorkspaceApps={() => togglePanel("workspace")}
-        onOpenNotifications={() => togglePanel("notifications")}
-      />
+        <TopNav
+          onMenuClick={() => setNavOpen((prev) => !prev)}
+          onRefresh={handleRefresh}
+          onOpenSettings={() => togglePanel("settings")}
+          onOpenNotifications={() => togglePanel("notifications")}
+        />
 
-      <div className="app-shell-grid flex-1 gap-6 px-4 pb-12 pt-6 sm:px-6 lg:px-8">
-        <Sidebar isOpen={isSidebarOpen} onClose={() => setSidebarOpen(false)} />
-
-        <main className="app-shell-main flex flex-1 justify-center">
-          <Container className="w-full cq-canvas" padding="default" variant="wide">
+        <main className="flex-1 overflow-x-hidden">
+          <div className="centered-shell">
             {children}
-          </Container>
+          </div>
         </main>
-      </div>
 
-      <Link
-        href="/workspace/feedback"
-        className="fixed bottom-6 left-6 z-30 inline-flex items-center gap-2 rounded-full bg-accent-500 px-4 py-2 text-sm font-semibold text-ink-50 shadow-floating transition hover:bg-accent-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-accent-500"
-        aria-label="Share feedback"
-      >
-        <MessageSquarePlus className="h-4 w-4" />
-        Feedback
-      </Link>
+        <Link
+          href="/workspace/feedback"
+          className="fixed bottom-6 left-6 z-30 inline-flex items-center gap-2 rounded-full bg-accent-500 px-4 py-2 text-sm font-semibold text-ink-50 shadow-floating transition hover:bg-accent-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-accent-500"
+          aria-label="Share feedback"
+        >
+          <MessageSquarePlus className="h-4 w-4" />
+          Feedback
+        </Link>
 
-      {activePanel ? (
+        {/* Navigation overlay panel */}
+        {isNavOpen && (
+          <div
+            className="fixed inset-0 z-30 bg-overlay/60 backdrop-blur-sm"
+            onClick={() => setNavOpen(false)}
+          />
+        )}
+        <NavigationPanel isOpen={isNavOpen} onClose={() => setNavOpen(false)} />
+
+        {/* Notifications overlay panel */}
+        {activePanel ? (
         <div
           className="pointer-events-none fixed inset-0 z-40 flex justify-end bg-transparent"
           aria-hidden={false}
@@ -241,139 +200,6 @@ export function AppShell({ children }: AppShellProps) {
                     >
                       Close
                     </button>
-                  </footer>
-                </div>
-              ) : null}
-
-              {activePanel === "settings" ? (
-                <div className="space-y-4">
-                  <header className="space-y-1">
-                    <div className="inline-flex items-center gap-2 rounded-full bg-accent-100 px-3 py-1 text-xs font-medium text-accent-700">
-                      <Settings2 className="h-3.5 w-3.5" />
-                      Workspace Settings
-                    </div>
-                    <h2 className="text-lg font-semibold text-ink-800">
-                      Tune your experience
-                    </h2>
-                    <p className="text-sm text-muted">
-                      Personalize how NoteNex behaves across devices.
-                    </p>
-                  </header>
-
-                  <div className="space-y-3">
-                    {[
-                      {
-                        key: "smartSuggestions" as const,
-                        title: "Smart suggestions",
-                        description:
-                          "Surface related notes and labels automatically while you type.",
-                        icon: Sparkles,
-                      },
-                      {
-                        key: "digestEnabled" as const,
-                        title: "Daily digest email",
-                        description:
-                          "Receive a morning summary of reminders and upcoming tasks.",
-                        icon: Inbox,
-                      },
-                      {
-                        key: "focusModePinned" as const,
-                        title: "Focus mode shortcuts",
-                        description:
-                          "Keep the quick capture panel pinned during focus sessions.",
-                        icon: Lightbulb,
-                      },
-                    ].map(({ key, title, description, icon: Icon }) => (
-                      <button
-                        key={key}
-                        type="button"
-                        onClick={() => toggleSetting(key)}
-                        disabled={preferencesLoading}
-                        className="flex w-full items-center gap-3 rounded-2xl bg-surface-muted/80 px-4 py-3 text-left transition hover:bg-surface-muted"
-                        aria-pressed={preferences[key]}
-                      >
-                        <span className="grid h-10 w-10 place-items-center rounded-xl bg-surface-muted text-ink-600">
-                          <Icon className="h-5 w-5" aria-hidden />
-                        </span>
-                        <span className="flex-1 space-y-1">
-                          <span className="block text-sm font-semibold text-ink-800">
-                            {title}
-                          </span>
-                          <span className="block text-xs text-muted">
-                            {description}
-                          </span>
-                        </span>
-                        <span
-                          className={clsx(
-                            "flex h-6 w-11 items-center rounded-full bg-surface-muted/80 transition shadow-inner",
-                            preferences[key] ? "justify-end bg-accent-500/90" : "justify-start",
-                          )}
-                          aria-hidden
-                        >
-                          <span className="mx-1 h-4 w-4 rounded-full bg-white/90 shadow-sm" />
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-
-                  <footer className="flex items-center justify-between pt-1 text-xs text-muted">
-                    <span>Settings sync automatically to your account.</span>
-                    <button
-                      type="button"
-                      className="font-semibold text-accent-600 hover:text-accent-700"
-                      onClick={() => setActivePanel(null)}
-                    >
-                      Done
-                    </button>
-                  </footer>
-                </div>
-              ) : null}
-
-              {activePanel === "workspace" ? (
-                <div className="space-y-4">
-                  <header className="space-y-1">
-                    <div className="inline-flex items-center gap-2 rounded-full bg-accent-100 px-3 py-1 text-xs font-medium text-accent-700">
-                      <Users className="h-3.5 w-3.5" />
-                      Workspace Switcher
-                    </div>
-                    <h2 className="text-lg font-semibold text-ink-800">
-                      Navigate faster
-                    </h2>
-                    <p className="text-sm text-muted">
-                      Jump into your most used surfaces in a single click.
-                    </p>
-                  </header>
-
-                  <div className="space-y-2">
-                    {workspaceShortcuts.map(({ label, href, description, icon: Icon }) => (
-                      <Link
-                        key={label}
-                        href={href as Route}
-                        onClick={() => {
-                          setActivePanel(null);
-                        }}
-                        className="group flex items-center gap-3 rounded-2xl bg-surface-muted/80 px-4 py-3 transition hover:bg-surface-muted"
-                      >
-                        <span className="grid h-10 w-10 place-items-center rounded-xl bg-surface-muted text-ink-600 transition group-hover:text-ink-800">
-                          <Icon className="h-5 w-5" aria-hidden />
-                        </span>
-                        <span className="flex-1">
-                          <span className="block text-sm font-semibold text-ink-800">
-                            {label}
-                          </span>
-                          {description ? (
-                            <span className="block text-xs text-muted">
-                              {description}
-                            </span>
-                          ) : null}
-                        </span>
-                      </Link>
-                    ))}
-                  </div>
-
-                  <footer className="rounded-2xl bg-surface-muted px-4 py-3 text-xs text-muted">
-                    Tip: Use <span className="kbd-chip">⌘</span>
-                    <span className="kbd-chip">K</span> to open the command search anywhere.
                   </footer>
                 </div>
               ) : null}

@@ -1,14 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import {
-  AppWindow,
   Bell,
   Menu,
-  Moon,
-  RefreshCw,
   Search,
-  Settings2,
-  Sun,
+  ChevronDown,
 } from "lucide-react";
 import { clsx } from "clsx";
 import Image from "next/image";
@@ -16,12 +13,12 @@ import { useAuth } from "@/lib/auth/auth-context";
 import { useTheme } from "@/components/providers/theme-provider";
 import { Container } from "./container";
 import { LogoWordmark } from "@/components/branding/logo-wordmark";
+import { ProfileDropdown } from "./profile-dropdown";
 
 type TopNavProps = {
   onMenuClick?: () => void;
   onRefresh?: () => void;
   onOpenSettings?: () => void;
-  onOpenWorkspaceApps?: () => void;
   onOpenNotifications?: () => void;
   onSearchFocus?: () => void;
 };
@@ -30,35 +27,13 @@ export function TopNav({
   onMenuClick,
   onRefresh,
   onOpenSettings,
-  onOpenWorkspaceApps,
   onOpenNotifications,
   onSearchFocus,
 }: TopNavProps) {
-  const { status, user, signInWithGoogle, signOut } = useAuth();
-  const { theme, toggleTheme } = useTheme();
+  const { status, user, signInWithGoogle } = useAuth();
+  const { theme } = useTheme();
+  const [isProfileOpen, setProfileOpen] = useState(false);
 
-  const quickActions = [
-    {
-      label: "Refresh",
-      icon: RefreshCw,
-      handler: onRefresh,
-    },
-    {
-      label: "Settings",
-      icon: Settings2,
-      handler: onOpenSettings,
-    },
-    {
-      label: "Workspace apps",
-      icon: AppWindow,
-      handler: onOpenWorkspaceApps,
-    },
-    {
-      label: "Notifications",
-      icon: Bell,
-      handler: onOpenNotifications,
-    },
-  ].filter(({ handler }) => Boolean(handler));
 
   const initials = user?.displayName
     ? user.displayName
@@ -85,13 +60,13 @@ export function TopNav({
         <button
           type="button"
           onClick={onMenuClick}
-          className="icon-button h-10 w-10 lg:hidden"
+          className="icon-button h-10 w-10 rounded-full bg-surface-muted/80 shadow-sm transition hover:bg-surface-muted"
           aria-label="Toggle navigation"
         >
           <Menu className="h-5 w-5" />
         </button>
 
-        <div className="hidden lg:block">
+        <div className="hidden sm:block">
           <LogoWordmark href="/" iconSize={48} />
         </div>
 
@@ -113,52 +88,55 @@ export function TopNav({
           </button>
         </div>
 
-        <div className="ml-auto flex items-center gap-1 top-nav-actions">
-          <button
-            type="button"
-            onClick={toggleTheme}
-            className="icon-button h-9 w-9 rounded-full bg-surface-muted/80 shadow-sm transition hover:bg-surface-muted"
-            aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
-          >
-            {theme === "dark" ? (
-              <Sun className="h-4 w-4" />
-            ) : (
-              <Moon className="h-4 w-4" />
-            )}
-          </button>
-
-          {quickActions.map(({ icon: Icon, label, handler }) => (
+        <div className="ml-auto flex items-center gap-2 top-nav-actions">
+          {onOpenNotifications && (
             <button
-              key={label}
               type="button"
-              onClick={() => handler?.()}
-              className="icon-button top-nav-action h-9 w-9"
-              aria-label={label}
+              onClick={() => onOpenNotifications()}
+              className="icon-button h-9 w-9 rounded-full bg-surface-muted/80 shadow-sm transition hover:bg-surface-muted"
+              aria-label="Notifications"
             >
-              <Icon className="h-4 w-4" />
+              <Bell className="h-4 w-4" />
             </button>
-          ))}
+          )}
 
           {status === "authenticated" ? (
-            <button
-              type="button"
-              className="icon-button h-9 w-9 rounded-full bg-surface-muted/80 text-ink-700 shadow-sm transition hover:bg-surface-muted"
-              aria-label="Sign out"
-              onClick={() => void signOut()}
-            >
-              {user?.photoURL ? (
-                <Image
-                  src={user.photoURL}
-                  alt={user.displayName ?? user.email ?? "Account"}
-                  width={36}
-                  height={36}
-                  className="rounded-full object-cover"
-                  sizes="36px"
-                />
-              ) : (
-                <span className="text-xs font-semibold">{initials}</span>
-              )}
-            </button>
+            <div className="relative">
+              <button
+                type="button"
+                className="flex items-center gap-2 h-9 rounded-full bg-surface-muted/80 text-ink-700 shadow-sm transition hover:bg-surface-muted px-2"
+                aria-label="Profile menu"
+                onClick={() => setProfileOpen((prev) => !prev)}
+              >
+                {user?.photoURL ? (
+                  <Image
+                    src={user.photoURL}
+                    alt={user.displayName ?? user.email ?? "Account"}
+                    width={28}
+                    height={28}
+                    className="rounded-full object-cover"
+                    sizes="28px"
+                  />
+                ) : (
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-accent-500 text-xs font-semibold text-white">
+                    {initials}
+                  </span>
+                )}
+                <ChevronDown className="h-3.5 w-3.5 text-ink-500" />
+              </button>
+              <ProfileDropdown
+                isOpen={isProfileOpen}
+                onClose={() => setProfileOpen(false)}
+                onOpenSettings={() => {
+                  setProfileOpen(false);
+                  onOpenSettings?.();
+                }}
+                onRefresh={() => {
+                  setProfileOpen(false);
+                  onRefresh?.();
+                }}
+              />
+            </div>
           ) : (
             <button
               type="button"

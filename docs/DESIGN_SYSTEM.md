@@ -1,9 +1,15 @@
 # NoteNex Design System
 
-**Version**: 1.0.0
-**Last Updated**: January 2025
+**Version**: 2.0.0
+**Last Updated**: October 2025
 
 A comprehensive design system for building applications with the NoteNex look and feel. This document captures every visual specification, color token, and component style for consistent cross-project implementation.
+
+## Version 2.0 Updates
+- **Centered Container Layout**: Content now lives in a single centered container (max-width 1280px) instead of multi-column grid
+- **Navigation Overlay Pattern**: Left navigation opens as slide-in overlay panel (280px) matching notification/settings patterns
+- **Consolidated Profile Menu**: Settings, theme toggle, refresh, and sign-out moved to profile dropdown
+- **Simplified Top Nav**: Reduced from 7-8 icons to 3-4 (hamburger, search, notifications, profile)
 
 ---
 
@@ -219,19 +225,43 @@ The sticky top navigation bar that spans the full width of the viewport.
 
 ---
 
-## Sidebar & Menus
+## Navigation & Overlay Panels
 
-Left navigation sidebar with collapsible functionality and hover states.
+Navigation uses a slide-in overlay pattern, matching notifications and settings overlays for consistency.
 
-### Specifications
+### Navigation Overlay Panel
+
+#### Specifications
 
 | Property | Value |
 |----------|-------|
-| **Width (Expanded)** | `288px` (w-72) |
-| **Width (Collapsed)** | `80px` (w-20) |
-| **Background** | `bg-surface-base/90 backdrop-blur-2xl` |
-| **Transition** | `transition-all duration-300` |
-| **Height** | `calc(100vh - 4rem)` (full viewport minus top nav) |
+| **Width** | `280px` (w-[280px]) |
+| **Background** | `bg-surface-elevated/95 backdrop-blur-2xl` |
+| **Border** | `border-r border-outline-subtle/60` |
+| **Shadow** | `shadow-2xl` |
+| **Border Radius** | `rounded-r-3xl` (24px right edge only) |
+| **Position** | `fixed inset-y-0 left-0` |
+| **Z-index** | `z-40` (40) |
+| **Transition** | `transition-transform duration-300 ease-out` |
+| **Hidden State** | `-translate-x-full` |
+| **Open State** | `translate-x-0` |
+
+#### Backdrop Overlay
+
+```css
+Background: bg-overlay/60 backdrop-blur-sm
+Z-index: z-30 (30, below panel)
+Position: fixed inset-0
+```
+
+#### Navigation Trigger
+
+Hamburger button in top nav (always visible):
+```css
+Icon: Menu (lucide-react)
+Style: h-10 w-10 rounded-full bg-surface-muted/80
+Position: Left-most item in top nav
+```
 
 ### Navigation Item States
 
@@ -264,9 +294,65 @@ Size: h-8 w-8 (32px)
 Border Radius: rounded-lg (8px)
 ```
 
+### Profile Dropdown
+
+Consolidated menu for user actions (replaces individual top nav buttons).
+
+#### Specifications
+
+| Property | Value |
+|----------|-------|
+| **Width** | `256px` (w-64) |
+| **Background** | `bg-surface-elevated/95 backdrop-blur-2xl` |
+| **Border** | `border border-outline-subtle/60` |
+| **Shadow** | `shadow-2xl` |
+| **Border Radius** | `rounded-2xl` (16px) |
+| **Position** | `absolute right-0 top-full mt-2` |
+| **Z-index** | `z-50` (50, above navigation) |
+| **Animation** | `fade-in slide-in-from-top-2 duration-150` |
+
+#### Menu Items
+- User info header (email, avatar)
+- Settings (opens settings overlay)
+- Theme toggle (inline switch: Light ⚪️ Dark)
+- Refresh (refreshes route)
+- Divider
+- Sign Out (danger text)
+
 ### Implementation
 
 ```tsx
+// Navigation Panel
+<div
+  className={clsx(
+    "fixed inset-y-0 left-0 z-40 w-[280px] transform",
+    "bg-surface-elevated/95 backdrop-blur-2xl",
+    "border-r border-outline-subtle/60 shadow-2xl rounded-r-3xl",
+    "transition-transform duration-300 ease-out",
+    isOpen ? "translate-x-0" : "-translate-x-full"
+  )}
+>
+  {/* Navigation content */}
+</div>
+
+// Backdrop
+{isNavOpen && (
+  <div
+    className="fixed inset-0 z-30 bg-overlay/60 backdrop-blur-sm"
+    onClick={() => setNavOpen(false)}
+  />
+)}
+
+// Profile Button
+<button
+  className="flex items-center gap-2 h-9 rounded-full bg-surface-muted/80 px-2"
+  onClick={() => setProfileOpen((prev) => !prev)}
+>
+  <Avatar />
+  <ChevronDown className="h-3.5 w-3.5" />
+</button>
+
+// Navigation Item
 <Link
   href="/workspace"
   className={clsx(

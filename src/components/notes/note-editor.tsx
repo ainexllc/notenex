@@ -975,7 +975,7 @@ export function NoteEditor({ note, onClose }: NoteEditorProps) {
             </div>
           ) : null}
 
-          {(existingAttachments.length || newAttachments.length) && (
+          {(existingAttachments.length > 0 || newAttachments.length > 0) && (
             <div className="grid gap-3 sm:grid-cols-2">
               {existingAttachments.map((attachment) => (
                 <figure
