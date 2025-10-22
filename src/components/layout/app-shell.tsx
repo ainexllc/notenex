@@ -12,6 +12,9 @@ import { QUICK_CAPTURE_EVENT } from "@/lib/constants/events";
 import { useNotes } from "@/components/providers/notes-provider";
 import { PRIMARY_NAV_ITEMS, SECONDARY_NAV_ITEMS } from "@/lib/constants/navigation";
 import { usePreferences } from "@/components/providers/preferences-provider";
+import { formatRelativeTime } from "@/lib/utils/datetime";
+import { InspectorProvider } from "@/components/workspace/inspector-context";
+import { WorkspaceInspector } from "@/components/workspace/context-inspector";
 import {
   BellRing,
   CheckCircle2,
@@ -43,26 +46,6 @@ const WORKSPACE_DESCRIPTIONS: Record<string, string> = {
   "/archive": "Reference shelved notes without cluttering your board.",
   "/trash": "Review and restore anything deleted in the last 30 days.",
 };
-
-function formatRelativeTime(date: Date) {
-  const diff = Date.now() - date.getTime();
-
-  if (diff < 45_000) {
-    return "Just now";
-  }
-
-  if (diff < 3_600_000) {
-    const minutes = Math.max(1, Math.floor(diff / 60_000));
-    return `${minutes}m ago`;
-  }
-
-  if (diff < 86_400_000) {
-    const hours = Math.max(1, Math.floor(diff / 3_600_000));
-    return `${hours}h ago`;
-  }
-
-  return date.toLocaleDateString();
-}
 
 export function AppShell({ children }: AppShellProps) {
   const router = useRouter();
@@ -135,7 +118,7 @@ export function AppShell({ children }: AppShellProps) {
   );
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-surface-base">
+    <div className="relative min-h-screen overflow-hidden bg-surface-base cq-shell">
       <div className="relative z-10 flex min-h-screen flex-col text-ink-900">
       <TopNav
         onMenuClick={() => setSidebarOpen((prev) => !prev)}
@@ -145,14 +128,32 @@ export function AppShell({ children }: AppShellProps) {
         onOpenNotifications={() => togglePanel("notifications")}
       />
 
-      <div className="flex flex-1">
+      <div className="app-shell-grid flex-1 gap-6 px-4 pb-12 pt-6 sm:px-6 lg:px-8">
         <Sidebar isOpen={isSidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-        <main className="flex flex-1 justify-center">
-          <Container className="w-full pb-12 pt-6" padding="default" variant="wide">
-            {children}
-          </Container>
-        </main>
+        <InspectorProvider>
+          <main className="app-shell-main flex flex-1 justify-center">
+            <Container className="w-full cq-canvas" padding="default" variant="wide">
+              {children}
+            </Container>
+
+            <WorkspaceInspector
+              activity={activityFeed}
+              loading={loading}
+              onOpenActivity={() => togglePanel("notifications")}
+            />
+          </main>
+        </InspectorProvider>
+
+        <aside
+          className="app-shell-utility cq-utility hidden rounded-3xl border border-outline-subtle/40 bg-surface-elevated/60 p-4 text-sm text-muted shadow-inner"
+          aria-hidden="true"
+        >
+          <p className="font-semibold text-ink-600">Workspace utility rail</p>
+          <p className="mt-2 leading-snug">
+            Additional panels (history, chat, automations) dock here on ultra-wide screens.
+          </p>
+        </aside>
       </div>
 
       <Link

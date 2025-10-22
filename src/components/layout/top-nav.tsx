@@ -69,9 +69,19 @@ export function TopNav({
         .toUpperCase()
     : user?.email?.charAt(0).toUpperCase() ?? "NN";
 
+  const navBackgroundClass =
+    theme === "dark"
+      ? "bg-[#050507]/95"
+      : "bg-white/92 border-b border-outline-subtle/60";
+
   return (
-    <header className="sticky top-0 z-30 bg-surface-base/95 backdrop-blur-2xl shadow-[0_18px_45px_-30px_rgba(0,0,0,0.8)]">
-      <Container className="flex h-16 items-center gap-3">
+    <header
+      className={clsx(
+        "sticky top-0 z-30 backdrop-blur-2xl shadow-[0_18px_45px_-30px_rgba(0,0,0,0.2)] transition-colors",
+        navBackgroundClass,
+      )}
+    >
+      <Container className="flex h-16 items-center gap-3 cq-nav">
         <button
           type="button"
           onClick={onMenuClick}
@@ -85,17 +95,25 @@ export function TopNav({
           <LogoWordmark href="/" iconSize={48} />
         </div>
 
-        <div className="mx-4 flex flex-1 items-center gap-2 rounded-full bg-surface-muted/80 px-4 py-2 shadow-sm transition hover:bg-surface-muted max-w-2xl">
-          <Search className="h-4 w-4 text-ink-500" />
+        <div className="top-nav-search mx-4 flex flex-1 items-center gap-2 rounded-full bg-surface-muted/80 px-4 py-2 shadow-sm transition hover:bg-surface-muted max-w-2xl">
+          <Search className="top-nav-search-icon h-4 w-4 text-ink-500" aria-hidden />
           <input
             type="text"
             placeholder="Search notes..."
-            className="w-full bg-transparent text-sm text-ink-800 placeholder:text-ink-500 focus:outline-none"
+            className="top-nav-search-input w-full bg-transparent text-sm text-ink-800 placeholder:text-ink-500 focus:outline-none"
             onFocus={() => onSearchFocus?.()}
           />
+          <button
+            type="button"
+            className="top-nav-search-button icon-button h-9 w-9 rounded-full bg-surface-muted/70 text-ink-600 hover:bg-surface-muted"
+            aria-label="Open search"
+            onClick={() => onSearchFocus?.()}
+          >
+            <Search className="h-4 w-4" aria-hidden />
+          </button>
         </div>
 
-        <div className="ml-auto flex items-center">
+        <div className="ml-auto flex items-center gap-1 top-nav-actions">
           <button
             type="button"
             onClick={toggleTheme}
@@ -114,7 +132,7 @@ export function TopNav({
               key={label}
               type="button"
               onClick={() => handler?.()}
-              className="icon-button hidden h-9 w-9 md:grid"
+              className="icon-button top-nav-action h-9 w-9"
               aria-label={label}
             >
               <Icon className="h-4 w-4" />

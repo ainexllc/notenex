@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   Archive,
   Palette,
@@ -18,6 +18,7 @@ import { NOTE_COLORS } from "@/lib/constants/note-colors";
 import { NoteEditor } from "@/components/notes/note-editor";
 import { useLabels } from "@/components/providers/labels-provider";
 import { getTextColorForBackground } from "@/lib/utils/note-colors";
+import { useInspector } from "@/components/workspace/inspector-context";
 
 type NoteCardProps = {
   note: Note;
@@ -26,6 +27,7 @@ type NoteCardProps = {
 export function NoteCard({ note }: NoteCardProps) {
   const { togglePin, toggleArchive, deleteNote, updateNote } = useNotes();
   const { labels } = useLabels();
+  const { setFocusNoteId } = useInspector();
   const [isEditing, setIsEditing] = useState(false);
   const [showPalette, setShowPalette] = useState(false);
   const labelMap = useMemo(() => {
@@ -58,6 +60,10 @@ export function NoteCard({ note }: NoteCardProps) {
     await togglePin(note.id, !note.pinned);
   };
 
+  const handleInspectorFocus = useCallback(() => {
+    setFocusNoteId(note.id);
+  }, [note.id, setFocusNoteId]);
+
   const handleOpenPalette = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
     setShowPalette((prev) => !prev);
@@ -83,7 +89,12 @@ export function NoteCard({ note }: NoteCardProps) {
           "group relative cursor-pointer break-inside-avoid overflow-visible rounded-3xl px-5 py-4 shadow-lg transition hover:shadow-2xl",
           backgroundClass,
         )}
-        onClick={() => setIsEditing(true)}
+        onClick={() => {
+          handleInspectorFocus();
+          setIsEditing(true);
+        }}
+        onMouseEnter={handleInspectorFocus}
+        onFocus={handleInspectorFocus}
       >
         <button
           type="button"
