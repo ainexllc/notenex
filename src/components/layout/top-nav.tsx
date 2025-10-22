@@ -11,7 +11,6 @@ import { clsx } from "clsx";
 import Image from "next/image";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useTheme } from "@/components/providers/theme-provider";
-import { Container } from "./container";
 import { LogoWordmark } from "@/components/branding/logo-wordmark";
 import { ProfileDropdown } from "./profile-dropdown";
 
@@ -56,22 +55,26 @@ export function TopNav({
         navBackgroundClass,
       )}
     >
-      <Container className="flex h-16 items-center gap-3 cq-nav">
-        <button
-          type="button"
-          onClick={onMenuClick}
-          className="icon-button h-10 w-10 rounded-full bg-surface-muted/80 shadow-sm transition hover:bg-surface-muted"
-          aria-label="Toggle navigation"
-        >
-          <Menu className="h-5 w-5" />
-        </button>
+      <div className="mx-auto flex h-16 w-full max-w-[1280px] items-center px-4 sm:px-6 cq-nav">
+        {/* Left: Hamburger + Logo (tightly grouped) */}
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onMenuClick}
+            className="icon-button h-10 w-10 rounded-full bg-surface-muted/80 shadow-sm transition hover:bg-surface-muted"
+            aria-label="Toggle navigation"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
 
-        <div className="hidden sm:block">
-          <LogoWordmark href="/" iconSize={48} />
+          <div className="hidden sm:block">
+            <LogoWordmark href="/" iconSize={48} />
+          </div>
         </div>
 
-        <div className="top-nav-search mx-4 flex flex-1 items-center gap-2 rounded-full bg-surface-muted/80 px-4 py-2 shadow-sm transition hover:bg-surface-muted max-w-2xl">
-          <Search className="top-nav-search-icon h-4 w-4 text-ink-500" aria-hidden />
+        {/* Center: Search bar */}
+        <div className="top-nav-search mx-4 flex flex-1 items-center gap-2 rounded-full bg-surface-muted/80 px-3 py-1 shadow-sm transition hover:bg-surface-muted max-w-2xl h-9">
+          <Search className="top-nav-search-icon h-4 w-4 text-ink-500 shrink-0" aria-hidden />
           <input
             type="text"
             placeholder="Search notes..."
@@ -80,7 +83,7 @@ export function TopNav({
           />
           <button
             type="button"
-            className="top-nav-search-button icon-button h-9 w-9 rounded-full bg-surface-muted/70 text-ink-600 hover:bg-surface-muted"
+            className="top-nav-search-button icon-button h-8 w-8 rounded-full bg-surface-muted/70 text-ink-600 hover:bg-surface-muted shrink-0"
             aria-label="Open search"
             onClick={() => onSearchFocus?.()}
           >
@@ -88,6 +91,7 @@ export function TopNav({
           </button>
         </div>
 
+        {/* Right: Actions (right-justified) */}
         <div className="ml-auto flex items-center gap-2 top-nav-actions">
           {onOpenNotifications && (
             <button
@@ -147,7 +151,7 @@ export function TopNav({
             </button>
           )}
         </div>
-      </Container>
+      </div>
     </header>
   );
 }

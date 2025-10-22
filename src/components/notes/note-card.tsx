@@ -5,6 +5,7 @@
 import { useMemo, useState } from "react";
 import {
   Archive,
+  LayoutGrid,
   Palette,
   Pin,
   PinOff,
@@ -12,9 +13,10 @@ import {
   Users,
 } from "lucide-react";
 import { clsx } from "clsx";
-import type { Note } from "@/lib/types/note";
+import type { Note, NotePattern } from "@/lib/types/note";
 import { useNotes } from "@/components/providers/notes-provider";
 import { NOTE_COLORS } from "@/lib/constants/note-colors";
+import { NOTE_PATTERNS } from "@/lib/constants/note-patterns";
 import { NoteEditor } from "@/components/notes/note-editor";
 import { useLabels } from "@/components/providers/labels-provider";
 import { getTextColorForBackground } from "@/lib/utils/note-colors";
@@ -28,6 +30,7 @@ export function NoteCard({ note }: NoteCardProps) {
   const { labels } = useLabels();
   const [isEditing, setIsEditing] = useState(false);
   const [showPalette, setShowPalette] = useState(false);
+  const [showPatternPicker, setShowPatternPicker] = useState(false);
   const labelMap = useMemo(() => {
     return new Map(labels.map((label) => [label.id, label]));
   }, [labels]);
@@ -40,6 +43,10 @@ export function NoteCard({ note }: NoteCardProps) {
 
   const backgroundClass =
     note.color === "default" ? "bg-surface-elevated" : `bg-${note.color}`;
+
+  const patternClass = note.pattern && note.pattern !== "none"
+    ? NOTE_PATTERNS.find((p) => p.id === note.pattern)?.patternClass || ""
+    : "";
 
   const textColors = getTextColorForBackground(note.color);
 
@@ -76,12 +83,31 @@ export function NoteCard({ note }: NoteCardProps) {
     setShowPalette(false);
   };
 
+  const handleOpenPatternPicker = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    setShowPatternPicker((prev) => !prev);
+  };
+
+  const handlePatternSelect = async (
+    event: React.MouseEvent<HTMLButtonElement>,
+    pattern: NotePattern,
+  ) => {
+    event.stopPropagation();
+    if (pattern === note.pattern) {
+      setShowPatternPicker(false);
+      return;
+    }
+    await updateNote(note.id, { pattern });
+    setShowPatternPicker(false);
+  };
+
   return (
     <>
       <article
         className={clsx(
           "group relative cursor-pointer break-inside-avoid overflow-visible rounded-3xl px-5 py-4 shadow-lg transition hover:shadow-2xl",
           backgroundClass,
+          patternClass,
         )}
         onClick={() => {
           setIsEditing(true);
@@ -231,6 +257,40 @@ export function NoteCard({ note }: NoteCardProps) {
                       )}
                       onClick={(event) => handleColorSelect(event, option.id)}
                       aria-label={`Set color ${option.label}`}
+                    />
+                  ))}
+                </div>
+              ) : null}
+            </div>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={handleOpenPatternPicker}
+                className={clsx(
+                  "icon-button h-9 w-9",
+                  showPatternPicker && "bg-accent-100 text-accent-600",
+                )}
+                aria-label="Change pattern"
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </button>
+              {showPatternPicker ? (
+                <div
+                  className="absolute bottom-12 right-0 z-30 flex flex-wrap gap-2 rounded-2xl bg-surface-elevated/95 p-3 shadow-floating backdrop-blur-xl max-w-[200px]"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  {NOTE_PATTERNS.map((pattern) => (
+                    <button
+                      key={pattern.id}
+                      type="button"
+                      className={clsx(
+                        "h-10 w-10 rounded-lg border-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-accent-500",
+                        pattern.previewClass,
+                        pattern.id === (note.pattern || "none") && "ring-2 ring-accent-600",
+                      )}
+                      onClick={(event) => handlePatternSelect(event, pattern.id)}
+                      aria-label={`Set pattern ${pattern.label}`}
+                      title={pattern.description}
                     />
                   ))}
                 </div>

@@ -1,4 +1,11 @@
 import type { Config } from "tailwindcss";
+import {
+  PATTERN_DOTS_SVG,
+  PATTERN_GRID_SVG,
+  PATTERN_DIAGONAL_SVG,
+  PATTERN_WAVES_SVG,
+  PATTERN_CIRCLES_SVG,
+} from "./src/lib/constants/note-patterns";
 
 const withOpacityValue = (variable: string): string => {
   return `rgb(var(${variable}) / <alpha-value>)`;
@@ -104,9 +111,23 @@ const config: Config = {
       borderRadius: {
         "3xl": "1.5rem",
       },
+      backgroundImage: {
+        "pattern-dots": `url("${PATTERN_DOTS_SVG}")`,
+        "pattern-grid": `url("${PATTERN_GRID_SVG}")`,
+        "pattern-diagonal": `url("${PATTERN_DIAGONAL_SVG}")`,
+        "pattern-waves": `url("${PATTERN_WAVES_SVG}")`,
+        "pattern-circles": `url("${PATTERN_CIRCLES_SVG}")`,
+      },
     },
   },
-  safelist: noteColorSafelist,
+  safelist: [
+    ...noteColorSafelist,
+    "bg-pattern-dots",
+    "bg-pattern-grid",
+    "bg-pattern-diagonal",
+    "bg-pattern-waves",
+    "bg-pattern-circles",
+  ],
   plugins: [],
 };
 

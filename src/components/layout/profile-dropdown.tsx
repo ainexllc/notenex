@@ -3,6 +3,7 @@
 import { useRef, useEffect } from "react";
 import { Settings, Moon, Sun, RefreshCw, LogOut } from "lucide-react";
 import { clsx } from "clsx";
+import Image from "next/image";
 import { useTheme } from "@/components/providers/theme-provider";
 import { useAuth } from "@/lib/auth/auth-context";
 
@@ -75,10 +76,13 @@ export function ProfileDropdown({ isOpen, onClose, onOpenSettings, onRefresh }: 
         <div className="px-3 py-3 border-b border-outline-subtle/40">
           <div className="flex items-center gap-3">
             {user.photoURL ? (
-              <img
+              <Image
                 src={user.photoURL}
-                alt={user.displayName || "User"}
-                className="h-10 w-10 rounded-full"
+                alt={user.displayName || user.email || "User"}
+                width={40}
+                height={40}
+                className="rounded-full object-cover"
+                sizes="40px"
               />
             ) : (
               <div className="h-10 w-10 rounded-full bg-accent-500 text-white grid place-items-center font-semibold text-sm">

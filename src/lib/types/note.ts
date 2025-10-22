@@ -15,6 +15,14 @@ export type NoteColor =
   | "note-moss"
   | "note-coal";
 
+export type NotePattern =
+  | "none"
+  | "dots"
+  | "grid"
+  | "diagonal"
+  | "waves"
+  | "circles";
+
 export type ChecklistItem = {
   id: string;
   text: string;
@@ -53,6 +61,7 @@ export type NoteDoc = {
   type: NoteType;
   checklist: ChecklistItem[];
   color: NoteColor;
+  pattern?: NotePattern;
   pinned: boolean;
   archived: boolean;
   labelIds: string[];
@@ -79,6 +88,7 @@ export type NoteDraft = {
   body?: string;
   checklist?: ChecklistItem[];
   color?: NoteColor;
+  pattern?: NotePattern;
   reminderAt?: Date | null;
   reminderId?: string | null;
   labelIds?: string[];
