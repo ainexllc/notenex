@@ -3,7 +3,9 @@
 import { useMemo } from "react";
 import { NoteComposer } from "@/components/notes/note-composer";
 import { NoteCard } from "@/components/notes/note-card";
+import { ViewToggle } from "@/components/notes/view-toggle";
 import { useNotes } from "@/components/providers/notes-provider";
+import { usePreferences } from "@/components/providers/preferences-provider";
 import { Container } from "@/components/layout/container";
 
 function NotesSkeleton() {
@@ -35,12 +37,22 @@ function EmptyState() {
 
 export function NoteBoard() {
   const { pinned, others, loading, notes, searchQuery } = useNotes();
+  const { preferences, updatePreferences } = usePreferences();
 
   const hasNotes = useMemo(() => pinned.length + others.length > 0, [pinned, others]);
 
+  const handleViewModeChange = async (mode: "masonry" | "list") => {
+    await updatePreferences({ viewMode: mode });
+  };
+
   return (
     <Container className="space-y-8 lg:px-0 cq-board" variant="narrow">
-      <NoteComposer />
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex-1">
+          <NoteComposer />
+        </div>
+        <ViewToggle viewMode={preferences.viewMode} onViewModeChange={handleViewModeChange} />
+      </div>
 
       {loading ? (
         <NotesSkeleton />
@@ -52,10 +64,10 @@ export function NoteBoard() {
                 <span>Pinned</span>
                 <span>{pinned.length}</span>
               </header>
-              <div className="note-board-columns">
+              <div className={preferences.viewMode === "list" ? "space-y-2" : "note-board-columns"}>
                 {pinned.map((note) => (
-                  <div key={note.id} className="mb-4">
-                    <NoteCard note={note} />
+                  <div key={note.id} className={preferences.viewMode === "list" ? "" : "mb-4"}>
+                    <NoteCard note={note} viewMode={preferences.viewMode} />
                   </div>
                 ))}
               </div>
@@ -70,10 +82,10 @@ export function NoteBoard() {
                   <span>{others.length}</span>
                 </header>
               ) : null}
-              <div className="note-board-columns">
+              <div className={preferences.viewMode === "list" ? "space-y-2" : "note-board-columns"}>
                 {others.map((note) => (
-                  <div key={note.id} className="mb-4">
-                    <NoteCard note={note} />
+                  <div key={note.id} className={preferences.viewMode === "list" ? "" : "mb-4"}>
+                    <NoteCard note={note} viewMode={preferences.viewMode} />
                   </div>
                 ))}
               </div>

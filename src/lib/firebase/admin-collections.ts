@@ -3,6 +3,7 @@ import {
   labelCollectionPath,
   noteCollectionPath,
   noteDocPath,
+  preferenceDocPath,
   reminderCollectionPath,
 } from "@/lib/firebase/collections";
 
@@ -20,4 +21,8 @@ export function adminReminderCollection(userId: string) {
 
 export function adminNoteDoc(userId: string, noteId: string) {
   return getAdminFirestore().doc(noteDocPath(userId, noteId));
+}
+
+export function adminPreferenceDoc(userId: string) {
+  return getAdminFirestore().doc(preferenceDocPath(userId));
 }

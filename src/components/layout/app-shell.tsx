@@ -10,12 +10,12 @@ import { useNotes } from "@/components/providers/notes-provider";
 import { usePreferences } from "@/components/providers/preferences-provider";
 import { formatRelativeTime } from "@/lib/utils/datetime";
 import {
-  BellRing,
   CheckCircle2,
   ListChecks,
   MessageSquarePlus,
   Sparkles,
   Send,
+  X,
 } from "lucide-react";
 import { SettingsPanel } from "./settings-panel";
 
@@ -24,10 +24,6 @@ type AppShellProps = {
 };
 
 type ActivePanel = "notifications" | "settings" | "ai-assistant" | null;
-
-
-const overlayPanelStyles =
-  "pointer-events-auto w-full max-w-lg rounded-3xl bg-surface-elevated/95 p-6 shadow-2xl backdrop-blur-xl";
 
 export function AppShell({ children }: AppShellProps) {
   const router = useRouter();
@@ -114,34 +110,45 @@ export function AppShell({ children }: AppShellProps) {
         )}
         <NavigationPanel isOpen={isNavOpen} onClose={() => setNavOpen(false)} />
 
-        {/* Notifications overlay panel */}
-        {activePanel ? (
-        <div
-          className="pointer-events-none fixed inset-0 z-40 flex justify-end bg-transparent"
-          aria-hidden={false}
-        >
-          <button
-            type="button"
-            className="pointer-events-auto absolute inset-0 cursor-default"
+        {/* Right panel overlay */}
+        {activePanel && (
+          <div
+            className="fixed inset-0 z-30 bg-overlay/60 backdrop-blur-sm"
             onClick={() => setActivePanel(null)}
-            aria-label="Close quick actions"
           />
-          <div className="pointer-events-none flex h-full w-full justify-end px-4 pb-6 pt-[4.5rem] sm:px-6">
-            <div className={`${overlayPanelStyles} pointer-events-auto`}>
+        )}
+
+        {/* Right sliding panel */}
+        <div
+          className={clsx(
+            "fixed inset-y-0 right-0 z-40 w-[480px] transform bg-surface-elevated/95 backdrop-blur-2xl border-l border-outline-subtle/60 shadow-2xl rounded-l-3xl transition-transform duration-300 ease-out",
+            activePanel ? "translate-x-0" : "translate-x-full",
+          )}
+        >
+          <div className="flex h-full flex-col">
+            <div className="flex items-center justify-between border-b border-outline-subtle/40 px-5 py-4">
+              <span className="text-sm font-semibold text-ink-900">
+                {activePanel === "notifications"
+                  ? "Activity Center"
+                  : activePanel === "settings"
+                    ? "Settings"
+                    : activePanel === "ai-assistant"
+                      ? "AI Assistant"
+                      : ""}
+              </span>
+              <button
+                type="button"
+                className="icon-button h-8 w-8 rounded-full bg-surface-muted hover:bg-ink-200"
+                aria-label="Close panel"
+                onClick={() => setActivePanel(null)}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className={`flex-1 overflow-y-auto p-6`}>
               {activePanel === "notifications" ? (
                 <div className="space-y-4">
-                  <header className="space-y-1">
-                    <div className="inline-flex items-center gap-2 rounded-full bg-accent-100 px-3 py-1 text-xs font-medium text-accent-700">
-                      <BellRing className="h-3.5 w-3.5" />
-                      Activity Center
-                    </div>
-                    <h2 className="text-lg font-semibold text-ink-800">
-                      Recent updates
-                    </h2>
-                    <p className="text-sm text-muted">
-                      Stay on top of reminders, shared notes, and pinned items.
-                    </p>
-                  </header>
 
                   {loading ? (
                     <div className="space-y-2">
@@ -200,17 +207,10 @@ export function AppShell({ children }: AppShellProps) {
                     </div>
                   )}
 
-                  <footer className="flex items-center justify-between rounded-2xl bg-surface-muted px-4 py-3 text-xs text-muted">
+                  <footer className="rounded-2xl bg-surface-muted px-4 py-3 text-xs text-muted">
                     <span>
                       {pinned.length} pinned · {others.length} in progress
                     </span>
-                    <button
-                      type="button"
-                      className="font-semibold text-accent-600 hover:text-accent-700"
-                      onClick={() => setActivePanel(null)}
-                    >
-                      Close
-                    </button>
                   </footer>
                 </div>
               ) : activePanel === "settings" ? (
@@ -269,15 +269,8 @@ export function AppShell({ children }: AppShellProps) {
                         <Send className="h-4 w-4" />
                       </button>
                     </div>
-                    <footer className="flex items-center justify-between text-xs text-muted">
+                    <footer className="text-xs text-muted">
                       <span>Powered by AI</span>
-                      <button
-                        type="button"
-                        className="font-semibold text-accent-600 hover:text-accent-700"
-                        onClick={() => setActivePanel(null)}
-                      >
-                        Close
-                      </button>
                     </footer>
                   </div>
                 </div>
@@ -285,7 +278,6 @@ export function AppShell({ children }: AppShellProps) {
             </div>
           </div>
         </div>
-      ) : null}
 
       </div>
     </div>

@@ -9,15 +9,17 @@ type LogoWordmarkProps = {
   href?: string;
   className?: string;
   iconSize?: number;
+  variant?: "light" | "dark";
 };
 
 export function LogoWordmark({
   href,
   className,
   iconSize = 64,
+  variant,
 }: LogoWordmarkProps) {
   const { theme } = useTheme();
-  const isLight = theme === "light";
+  const isLight = variant ? variant === "light" : theme === "light";
   const fontSize = iconSize * 0.52;
   const letterSpacing = iconSize * -0.018;
   const xOffset = iconSize * 0.28;

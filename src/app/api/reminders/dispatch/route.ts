@@ -8,7 +8,9 @@ import { getAdminFirestore, getAdminAuth } from "@/lib/firebase/admin-app";
 import { sendEmail, sendSms } from "@/lib/notifications/channels";
 import type { ReminderDoc } from "@/lib/types/reminder";
 import { serverEnv } from "@/env";
-import { adminNoteDoc } from "@/lib/firebase/admin-collections";
+import { adminNoteDoc, adminPreferenceDoc } from "@/lib/firebase/admin-collections";
+import type { UserPreferenceDoc } from "@/lib/types/settings";
+import type { UserPreferenceDoc } from "@/lib/types/settings";
 
 const MAX_REMINDERS_PER_RUN = 50;
 
@@ -92,6 +94,7 @@ export async function POST(request: NextRequest) {
 
   const auth = getAdminAuth();
   const userCache = new Map<string, { email?: string | null; phoneNumber?: string | null; displayName?: string | null }>();
+  const preferenceCache = new Map<string, UserPreferenceDoc | null>();
 
   const processed: ProcessedReminder[] = [];
 
@@ -106,9 +109,28 @@ export async function POST(request: NextRequest) {
     }
 
     const targetTime = getTargetTimestamp(data);
-    const channels = data.channels?.length
-      ? data.channels
-      : ["push"];
+    let channels = data.channels?.length ? data.channels : [];
+    if (!channels.length) {
+      let prefs = preferenceCache.get(userId);
+      if (prefs === undefined) {
+        try {
+          const prefSnapshot = await adminPreferenceDoc(userId).get();
+          prefs = prefSnapshot.exists
+            ? (prefSnapshot.data() as UserPreferenceDoc)
+            : null;
+          preferenceCache.set(userId, prefs);
+        } catch (error) {
+          console.error(`Failed to read preferences for ${userId}`, error);
+          prefs = null;
+          preferenceCache.set(userId, null);
+        }
+      }
+      if (prefs?.reminderChannels?.length) {
+        channels = prefs.reminderChannels;
+      } else {
+        channels = ["push"];
+      }
+    }
 
     if (!userCache.has(userId)) {
       try {
@@ -149,9 +171,28 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (channels.includes("sms") && userInfo.phoneNumber) {
+    let smsRecipient = userInfo.phoneNumber ?? null;
+    if (!smsRecipient && channels.includes("sms")) {
+      let prefs = preferenceCache.get(userId);
+      if (prefs === undefined) {
+        try {
+          const prefSnapshot = await adminPreferenceDoc(userId).get();
+          prefs = prefSnapshot.exists
+            ? (prefSnapshot.data() as UserPreferenceDoc)
+            : null;
+          preferenceCache.set(userId, prefs);
+        } catch (error) {
+          console.error(`Failed to read preferences for ${userId}`, error);
+          prefs = null;
+          preferenceCache.set(userId, null);
+        }
+      }
+      smsRecipient = prefs?.smsNumber ?? null;
+    }
+
+    if (channels.includes("sms") && smsRecipient) {
       const ok = await sendSms({
-        to: userInfo.phoneNumber,
+        to: smsRecipient,
         body: smsBody,
       });
       if (ok) {

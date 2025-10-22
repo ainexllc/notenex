@@ -69,6 +69,7 @@ export type NoteDoc = {
   reminderId?: string | null;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  deletedAt?: Timestamp | null;
   attachments: NoteAttachment[];
   sharedWith: NoteCollaboratorDoc[];
   sharedWithUserIds: string[];
@@ -80,6 +81,7 @@ export type Note = Omit<NoteDoc, "createdAt" | "updatedAt" | "reminderAt" | "sha
   updatedAt: Date;
   reminderAt?: Date | null;
   reminderId?: string | null;
+  deletedAt?: Date | null;
   sharedWith: NoteCollaborator[];
 };
 
@@ -95,6 +97,7 @@ export type NoteDraft = {
   attachments?: NoteAttachment[];
   sharedWith?: NoteCollaborator[];
   sharedWithUserIds?: string[];
+  deletedAt?: Date | null;
 };
 
 export type LabelDoc = {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Settings, Moon, Sun, RefreshCw, LogOut, Activity } from "lucide-react";
 import { clsx } from "clsx";
 import Image from "next/image";
@@ -16,6 +17,7 @@ type ProfileDropdownProps = {
 };
 
 export function ProfileDropdown({ isOpen, onClose, onOpenSettings, onOpenActivity, onRefresh }: ProfileDropdownProps) {
+  const router = useRouter();
   const { theme, toggleTheme } = useTheme();
   const { user, signOut } = useAuth();
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -68,6 +70,7 @@ export function ProfileDropdown({ isOpen, onClose, onOpenSettings, onOpenActivit
   const handleSignOut = async () => {
     await signOut();
     onClose();
+    router.push('/');
   };
 
   return (

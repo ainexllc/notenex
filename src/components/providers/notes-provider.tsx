@@ -7,6 +7,7 @@ import {
   useMemo,
   useState,
   useEffect,
+  useRef,
 } from "react";
 import { useAuth } from "@/lib/auth/auth-context";
 import type { Note, NoteAttachment, NoteDraft, NoteType, NoteColor } from "@/lib/types/note";
@@ -22,6 +23,8 @@ import {
   togglePin,
   updateNote as updateNoteMutation,
   uploadNoteAttachment,
+  restoreNote as restoreNoteMutation,
+  permanentlyDeleteNote,
 } from "@/lib/firebase/note-service";
 
 type CreateNoteInput = {
@@ -43,6 +46,7 @@ type NotesContextValue = {
   pinned: Note[];
   others: Note[];
   allNotes: Note[];
+  trashed: Note[];
   loading: boolean;
   searchQuery: string;
   setSearchQuery: (value: string) => void;
@@ -53,6 +57,9 @@ type NotesContextValue = {
   togglePin: (noteId: string, next: boolean) => Promise<void>;
   toggleArchive: (noteId: string, next: boolean) => Promise<void>;
   deleteNote: (noteId: string) => Promise<void>;
+  restoreNote: (noteId: string) => Promise<void>;
+  destroyNote: (noteId: string) => Promise<void>;
+  destroyAllNotes: () => Promise<void>;
   removeAttachment: (noteId: string, attachment: NoteAttachment) => Promise<void>;
   attachFiles: (noteId: string, files: File[]) => Promise<void>;
 };
@@ -73,6 +80,13 @@ export function NotesProvider({ children }: NotesProviderProps) {
   const [pendingNotes, setPendingNotes] = useState<Note[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeLabelIds, setActiveLabelIds] = useState<string[]>([]);
+  const computedNotesRef = useRef<{
+    merged: Note[];
+    filtered: Note[];
+    pinned: Note[];
+    others: Note[];
+    trashed: Note[];
+  }>({ merged: [], filtered: [], pinned: [], others: [], trashed: [] });
 
   const userId = user?.id ?? null;
 
@@ -229,6 +243,43 @@ export function NotesProvider({ children }: NotesProviderProps) {
     [userId],
   );
 
+  const handleRestore = useCallback(
+    async (noteId: string) => {
+      if (!userId) {
+        return;
+      }
+
+      await restoreNoteMutation(userId, noteId);
+    },
+    [userId],
+  );
+
+  const handleDestroy = useCallback(
+    async (noteId: string) => {
+      if (!userId) {
+        return;
+      }
+
+      await permanentlyDeleteNote(userId, noteId);
+    },
+    [userId],
+  );
+
+  const handleDestroyAll = useCallback(async () => {
+    if (!userId) {
+      return;
+    }
+
+    const trashedSnapshot = computedNotesRef.current?.trashed ?? [];
+    if (!trashedSnapshot.length) {
+      return;
+    }
+
+    await Promise.all(
+      trashedSnapshot.map((note) => permanentlyDeleteNote(userId, note.id)),
+    );
+  }, [userId]);
+
   const handleRemoveAttachment = useCallback(
     async (noteId: string, attachment: NoteAttachment) => {
       if (!userId) {
@@ -273,11 +324,27 @@ export function NotesProvider({ children }: NotesProviderProps) {
 
     const merged = Array.from(noteMap.values());
 
+    const sortByNewest = (a: Note, b: Note) => {
+      const aTime = a.updatedAt?.getTime() ?? a.createdAt.getTime();
+      const bTime = b.updatedAt?.getTime() ?? b.createdAt.getTime();
+      return bTime - aTime;
+    };
+
+    const trashed = merged
+      .filter((note) => Boolean(note.deletedAt))
+      .sort((a, b) => {
+        const aDeleted = a.deletedAt?.getTime() ?? a.updatedAt?.getTime() ?? a.createdAt.getTime();
+        const bDeleted = b.deletedAt?.getTime() ?? b.updatedAt?.getTime() ?? b.createdAt.getTime();
+        return bDeleted - aDeleted;
+      });
+
+    const activeNotes = merged.filter((note) => !note.deletedAt);
+
     const normalizedQuery = searchQuery.trim().toLowerCase();
     const hasQuery = normalizedQuery.length > 1;
     const hasLabelFilter = activeLabelIds.length > 0;
 
-    const filtered = merged.filter((note) => {
+    const filtered = activeNotes.filter((note) => {
       // Exclude archived notes from workspace view
       if (note.archived) {
         return false;
@@ -302,22 +369,21 @@ export function NotesProvider({ children }: NotesProviderProps) {
       return haystack.includes(normalizedQuery);
     });
 
-    const sortByNewest = (a: Note, b: Note) => {
-      const aTime = a.updatedAt?.getTime() ?? a.createdAt.getTime();
-      const bTime = b.updatedAt?.getTime() ?? b.createdAt.getTime();
-      return bTime - aTime;
-    };
-
     const pinned = filtered.filter((note) => note.pinned).sort(sortByNewest);
     const others = filtered.filter((note) => !note.pinned).sort(sortByNewest);
 
     return {
-      merged,
+      merged: activeNotes,
       filtered,
       pinned,
       others,
+      trashed,
     };
   }, [pendingNotes, ownedNotes, sharedNotes, searchQuery, activeLabelIds]);
+
+  useEffect(() => {
+    computedNotesRef.current = computedNotes;
+  }, [computedNotes]);
 
   const updateSearchQuery = useCallback((value: string) => {
     setSearchQuery(value);
@@ -333,6 +399,7 @@ export function NotesProvider({ children }: NotesProviderProps) {
       notes: computedNotes.filtered,
       pinned: computedNotes.pinned,
       others: computedNotes.others,
+      trashed: computedNotes.trashed,
       loading,
       searchQuery,
       setSearchQuery: updateSearchQuery,
@@ -343,6 +410,9 @@ export function NotesProvider({ children }: NotesProviderProps) {
       togglePin: handleTogglePin,
       toggleArchive: handleToggleArchive,
       deleteNote: handleDelete,
+      restoreNote: handleRestore,
+      destroyNote: handleDestroy,
+      destroyAllNotes: handleDestroyAll,
       removeAttachment: handleRemoveAttachment,
       attachFiles: handleAttachFiles,
     }),
@@ -351,6 +421,7 @@ export function NotesProvider({ children }: NotesProviderProps) {
       computedNotes.filtered,
       computedNotes.pinned,
       computedNotes.others,
+      computedNotes.trashed,
       loading,
       searchQuery,
       activeLabelIds,
@@ -359,6 +430,9 @@ export function NotesProvider({ children }: NotesProviderProps) {
       handleTogglePin,
       handleToggleArchive,
       handleDelete,
+      handleRestore,
+      handleDestroy,
+      handleDestroyAll,
       handleRemoveAttachment,
       handleAttachFiles,
       updateSearchQuery,

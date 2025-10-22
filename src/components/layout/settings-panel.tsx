@@ -21,7 +21,7 @@ type SettingsPanelProps = {
   preferences: UserPreference;
   isLoading: boolean;
   onUpdate: (
-    updates: Partial<Omit<UserPreference, "id" | "createdAt" | "updatedAt" >>,
+    updates: Partial<Omit<UserPreference, "id" | "createdAt" | "updatedAt">>,
   ) => Promise<void>;
   onClose: () => void;
 };
@@ -125,12 +125,12 @@ export function SettingsPanel({ preferences, isLoading, onUpdate, onClose }: Set
   }, [quietSaveState]);
 
   const canUseSms = useMemo(() => Boolean(preferences.smsNumber?.trim()), [preferences.smsNumber]);
-  const { normalized: trimmedPhone, digits: phoneDigits } = useMemo(
+  const { normalized: normalizedPhone, digits: phoneDigits } = useMemo(
     () => sanitizePhone(phoneInput),
     [phoneInput],
   );
   const hasMinimumDigits = phoneDigits.length >= MIN_PHONE_LENGTH;
-  const isPhoneDirty = (preferences.smsNumber ?? "") !== trimmedPhone;
+  const isPhoneDirty = (preferences.smsNumber ?? "") !== normalizedPhone;
 
   const storedQuietStart = preferences.quietHoursStart ?? "";
   const storedQuietEnd = preferences.quietHoursEnd ?? "";
@@ -155,7 +155,7 @@ export function SettingsPanel({ preferences, isLoading, onUpdate, onClose }: Set
     try {
       const nextChannels: ReminderChannel[] = preferences.reminderChannels.includes("sms")
         ? [...preferences.reminderChannels]
-        : [...preferences.reminderChannels, "sms" as ReminderChannel];
+        : [...preferences.reminderChannels, "sms"];
 
       await onUpdate({
         smsNumber: normalized,
@@ -392,7 +392,9 @@ export function SettingsPanel({ preferences, isLoading, onUpdate, onClose }: Set
           <section className="space-y-4 rounded-3xl border border-outline-subtle/60 bg-surface-muted/40 p-5 shadow-inner">
             <div className="space-y-1">
               <h3 className="text-sm font-semibold text-ink-800">Reminder channels</h3>
-              <p className="text-xs text-muted">Toggle the default channels we use when you schedule new reminders.</p>
+              <p className="text-xs text-muted">
+                Toggle the default channels we use when you schedule new reminders.
+              </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               {BASE_CHANNELS.map(({ id, label, description, icon: Icon }) => {
@@ -459,7 +461,7 @@ export function SettingsPanel({ preferences, isLoading, onUpdate, onClose }: Set
                     setQuietSaveState("idle");
                     setQuietError(null);
                   }}
-                  className="w-full rounded-xl border border-outline-subtle/60 bg-white/90 px-3 py-2 text-sm text-ink-700 shadow-sm transition focus:border-accent-500 focus:outline-none dark:border-outline-subtle dark:bg-surface-elevated/80 dark:text-ink-200"
+                  className="w-full rounded-xl border border-outline-subtle/60 bg-white/90 px-3 py-2 text-sm text-ink-700 shadow-sm transition focus:border-accent-500 focus:outline-none dark;border-outline-subtle dark:bg-surface-elevated/80 dark:text-ink-200"
                   disabled={isLoading || quietSaveState === "saving"}
                 />
               </label>
@@ -545,7 +547,7 @@ export function SettingsPanel({ preferences, isLoading, onUpdate, onClose }: Set
                   >
                     <Icon className="h-5 w-5" />
                     <div className="space-y-1">
-                      <div className="inline-flex items-center gap-2 text-sm font-semibold">
+                      <div className="inline-flex items-start gap-2 text-sm font-semibold">
                         {label}
                         <span
                           className={clsx(

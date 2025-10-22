@@ -1,9 +1,16 @@
 # NoteNex Design System
 
-**Version**: 2.0.0
+**Version**: 2.1.0
 **Last Updated**: October 2025
 
 A comprehensive design system for building applications with the NoteNex look and feel. This document captures every visual specification, color token, and component style for consistent cross-project implementation.
+
+## Version 2.1 Updates (Latest)
+- **Right-Side Sliding Panels**: Settings, Activity Center, and AI Assistant now slide in from right with unified header design (480px wide)
+- **View Mode Toggle**: Masonry and List view modes for note display, similar to Google Keep
+- **Logo Variant System**: Explicit dark/light mode logo variants for consistent branding across themes
+- **Logout Navigation**: User logout now redirects to public homepage instead of staying on authenticated pages
+- **Clean Panel Headers**: Removed redundant close buttons and scrollbars from panel content areas
 
 ## Version 2.0 Updates
 - **Centered Container Layout**: Content now lives in a single centered container (max-width 1280px) instead of multi-column grid
@@ -18,13 +25,16 @@ A comprehensive design system for building applications with the NoteNex look an
 1. [Container Width System](#container-width-system)
 2. [Color System](#color-system)
 3. [Top Navigation](#top-navigation)
-4. [Sidebar & Menus](#sidebar--menus)
-5. [Card Components](#card-components)
-6. [Typography](#typography)
-7. [Shadows & Effects](#shadows--effects)
-8. [Border Radius](#border-radius)
-9. [Spacing System](#spacing-system)
-10. [Implementation Guide](#implementation-guide)
+4. [Navigation & Overlay Panels](#navigation--overlay-panels)
+5. [Right-Side Panels](#right-side-panels)
+6. [View Mode System](#view-mode-system)
+7. [Logo & Branding](#logo--branding)
+8. [Card Components](#card-components)
+9. [Typography](#typography)
+10. [Shadows & Effects](#shadows--effects)
+11. [Border Radius](#border-radius)
+12. [Spacing System](#spacing-system)
+13. [Implementation Guide](#implementation-guide)
 
 ---
 
@@ -317,7 +327,7 @@ Consolidated menu for user actions (replaces individual top nav buttons).
 - Theme toggle (inline switch: Light ⚪️ Dark)
 - Refresh (refreshes route)
 - Divider
-- Sign Out (danger text)
+- Sign Out (danger text, redirects to public homepage `/`)
 
 ### Implementation
 
@@ -372,7 +382,379 @@ Consolidated menu for user actions (replaces individual top nav buttons).
   </span>
   <span>{label}</span>
 </Link>
+
+// Sign Out with Homepage Redirect
+const handleSignOut = async () => {
+  await signOut();
+  onClose();
+  router.push('/'); // Redirect to public homepage
+};
+
+<button
+  onClick={handleSignOut}
+  className="text-danger hover:bg-danger/10"
+>
+  Sign Out
+</button>
 ```
+
+---
+
+## Right-Side Panels
+
+Settings, Activity Center, and AI Assistant panels slide in from the right side, providing contextual information and controls without navigating away from the current page.
+
+### Panel Specifications
+
+| Property | Value |
+|----------|-------|
+| **Width** | `480px` (w-[480px]) |
+| **Background** | `bg-surface-elevated/95 backdrop-blur-2xl` |
+| **Border** | `border-l border-outline-subtle/60` |
+| **Shadow** | `shadow-2xl` |
+| **Border Radius** | `rounded-l-3xl` (24px left edge only) |
+| **Position** | `fixed inset-y-0 right-0` |
+| **Z-index** | `z-40` (40, above overlay) |
+| **Transition** | `transition-transform duration-300 ease-out` |
+| **Hidden State** | `translate-x-full` |
+| **Open State** | `translate-x-0` |
+
+### Unified Panel Header
+
+All right-side panels share a consistent header design:
+
+```css
+Height: 64px (approx, flex with padding)
+Border: border-b border-outline-subtle/40
+Padding: px-5 py-4
+Background: transparent (inherits from panel)
+Layout: flex items-center justify-between
+```
+
+**Header Contents:**
+- Panel title (text-sm font-semibold text-ink-900)
+- Close button (h-8 w-8 rounded-full bg-surface-muted hover:bg-ink-200)
+
+### Content Area
+
+```css
+Scroll Container: flex-1 overflow-y-auto
+Padding: p-6 (24px all sides)
+Background: transparent
+```
+
+**Content is self-contained** - no internal headers or close buttons. Panel relies entirely on unified header.
+
+### Panel Types
+
+#### Settings Panel
+- **Trigger**: Settings button in profile dropdown
+- **Content**: User preferences, notification settings, quiet hours
+- **Sections**: Space-y-6 with rounded-3xl containers
+
+#### Activity Center
+- **Trigger**: Bell icon in top navigation
+- **Content**: Recent note activity, updates timeline
+- **Footer**: Summary stats (pinned count, in-progress count)
+
+#### AI Assistant
+- **Trigger**: Sparkles icon in top navigation
+- **Content**: AI chat interface, suggested prompts
+- **Layout**: Flex column with input at bottom
+
+### Backdrop Overlay
+
+```css
+Background: bg-overlay/60 backdrop-blur-sm
+Z-index: z-30 (30, below panel)
+Position: fixed inset-0
+Interaction: Click to close panel
+```
+
+### Implementation
+
+```tsx
+// Panel container
+<div
+  className={clsx(
+    "fixed inset-y-0 right-0 z-40 w-[480px] transform",
+    "bg-surface-elevated/95 backdrop-blur-2xl",
+    "border-l border-outline-subtle/60 shadow-2xl rounded-l-3xl",
+    "transition-transform duration-300 ease-out",
+    activePanel ? "translate-x-0" : "translate-x-full"
+  )}
+>
+  <div className="flex h-full flex-col">
+    {/* Unified header */}
+    <div className="flex items-center justify-between border-b border-outline-subtle/40 px-5 py-4">
+      <span className="text-sm font-semibold text-ink-900">
+        {panelTitle}
+      </span>
+      <button
+        type="button"
+        className="icon-button h-8 w-8 rounded-full bg-surface-muted hover:bg-ink-200"
+        onClick={() => setActivePanel(null)}
+      >
+        <X className="h-4 w-4" />
+      </button>
+    </div>
+
+    {/* Content area */}
+    <div className="flex-1 overflow-y-auto p-6">
+      {panelContent}
+    </div>
+  </div>
+</div>
+
+// Backdrop
+{activePanel && (
+  <div
+    className="fixed inset-0 z-30 bg-overlay/60 backdrop-blur-sm"
+    onClick={() => setActivePanel(null)}
+  />
+)}
+```
+
+### Keyboard Shortcuts
+
+All panels support **ESC key** to close:
+
+```typescript
+useEffect(() => {
+  if (!activePanel) return;
+
+  const handleEscape = (event: KeyboardEvent) => {
+    if (event.key === "Escape") {
+      setActivePanel(null);
+    }
+  };
+
+  document.addEventListener("keydown", handleEscape);
+  return () => document.removeEventListener("keydown", handleEscape);
+}, [activePanel]);
+```
+
+---
+
+## View Mode System
+
+Inspired by Google Keep, users can switch between masonry and list views for note display.
+
+### View Modes
+
+| Mode | Description | Layout Class | Use Case |
+|------|-------------|--------------|----------|
+| **Masonry** | Multi-column grid with variable heights | `note-board-columns` | Visual browsing, Pinterest-style |
+| **List** | Single column, fixed height cards | `space-y-2` | Quick scanning, compact view |
+
+### View Toggle Component
+
+#### Specifications
+
+| Property | Value |
+|----------|-------|
+| **Container** | `inline-flex items-center gap-1 rounded-full bg-surface-muted/80 p-1 shadow-sm` |
+| **Button Size** | `h-8 w-8` |
+| **Icon Size** | `h-4 w-4` |
+| **Active State** | `bg-accent-500 text-white shadow-sm` |
+| **Inactive State** | `text-ink-600 hover:bg-surface-muted hover:text-ink-800` |
+| **Icons** | LayoutGrid (masonry), List (list) |
+
+### Implementation
+
+```tsx
+// ViewToggle Component
+export function ViewToggle({
+  viewMode,
+  onViewModeChange
+}: ViewToggleProps) {
+  return (
+    <div className="inline-flex items-center gap-1 rounded-full bg-surface-muted/80 p-1 shadow-sm">
+      <button
+        type="button"
+        onClick={() => onViewModeChange("masonry")}
+        className={clsx(
+          "inline-flex h-8 w-8 items-center justify-center rounded-full transition-colors",
+          viewMode === "masonry"
+            ? "bg-accent-500 text-white shadow-sm"
+            : "text-ink-600 hover:bg-surface-muted hover:text-ink-800"
+        )}
+        aria-label="Masonry view"
+      >
+        <LayoutGrid className="h-4 w-4" />
+      </button>
+      <button
+        type="button"
+        onClick={() => onViewModeChange("list")}
+        className={clsx(
+          "inline-flex h-8 w-8 items-center justify-center rounded-full transition-colors",
+          viewMode === "list"
+            ? "bg-accent-500 text-white shadow-sm"
+            : "text-ink-600 hover:bg-surface-muted hover:text-ink-800"
+        )}
+        aria-label="List view"
+      >
+        <List className="h-4 w-4" />
+      </button>
+    </div>
+  );
+}
+```
+
+### Masonry Layout
+
+```css
+/* Global CSS */
+.note-board-columns {
+  column-count: 1;
+  column-gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .note-board-columns {
+    column-count: 2;
+  }
+}
+
+@media (min-width: 1024px) {
+  .note-board-columns {
+    column-count: 3;
+  }
+}
+
+@media (min-width: 1280px) {
+  .note-board-columns {
+    column-count: 4;
+  }
+}
+```
+
+### List Layout
+
+```tsx
+// List view container
+<div className="space-y-2">
+  {notes.map((note) => (
+    <NoteCard key={note.id} note={note} viewMode="list" />
+  ))}
+</div>
+```
+
+### Card Adaptations
+
+Cards adjust their layout based on view mode:
+
+**Masonry Mode:**
+```css
+Article: break-inside-avoid px-5 py-4
+Content: max-h-[480px] overflow-y-auto
+```
+
+**List Mode:**
+```css
+Article: flex items-start gap-4 px-5 py-3
+Content: flex-1 max-h-24 overflow-y-auto
+```
+
+### Persistence
+
+View mode preference is stored in Firestore user preferences:
+
+```typescript
+type UserPreference = {
+  // ... other preferences
+  viewMode: "masonry" | "list";
+};
+
+// Update preference
+await updatePreferences({ viewMode: "list" });
+```
+
+---
+
+## Logo & Branding
+
+The LogoWordmark component supports explicit theme variants for consistent branding across light and dark backgrounds.
+
+### Logo Variant System
+
+#### Props
+
+```typescript
+type LogoWordmarkProps = {
+  href?: string;
+  className?: string;
+  iconSize?: number;        // Default: 64
+  variant?: "light" | "dark"; // Explicit theme override
+};
+```
+
+#### Variant Behavior
+
+| Variant | When to Use | Logo Color |
+|---------|-------------|------------|
+| `"dark"` | On dark backgrounds (public homepage) | White/light colors |
+| `"light"` | On light backgrounds | Dark/black colors |
+| `undefined` | Responsive to theme context | Auto-detects from ThemeProvider |
+
+### Implementation
+
+```tsx
+export function LogoWordmark({
+  href,
+  className,
+  iconSize = 64,
+  variant,
+}: LogoWordmarkProps) {
+  const { theme } = useTheme();
+
+  // Explicit variant overrides theme context
+  const isLight = variant ? variant === "light" : theme === "light";
+
+  return (
+    <Link href={href || "/"} className={className}>
+      <div className="flex items-center gap-2">
+        <LogoIcon
+          className={isLight ? "text-ink-900" : "text-white"}
+          size={iconSize}
+        />
+        <span className={clsx(
+          "font-kanit text-2xl font-semibold tracking-tight",
+          isLight ? "text-ink-900" : "text-white"
+        )}>
+          NoteNex
+        </span>
+      </div>
+    </Link>
+  );
+}
+```
+
+### Usage Examples
+
+**Public Homepage (Dark Background):**
+```tsx
+<LogoWordmark href="/" iconSize={96} variant="dark" />
+```
+
+**Authenticated App (Theme-Responsive):**
+```tsx
+<LogoWordmark href="/workspace" iconSize={64} />
+```
+
+**Footer (Dark Background):**
+```tsx
+<LogoWordmark iconSize={80} variant="dark" />
+```
+
+### Size Presets
+
+| Context | Icon Size | Use Case |
+|---------|-----------|----------|
+| **Hero** | 96-128px | Landing page header |
+| **Navigation** | 48-64px | Top nav, app header |
+| **Footer** | 64-80px | Footer branding |
+| **Compact** | 32-40px | Mobile nav, tight spaces |
 
 ---
 
@@ -621,6 +1003,8 @@ export function Container({
 
 ## Version History
 
+- **2.1.0** (October 2025) - Right-side panels, view mode toggle, logo variants, logout redirect
+- **2.0.0** (October 2025) - Centered layout, navigation overlay, profile dropdown consolidation
 - **1.0.0** (January 2025) - Initial design system documentation
 
 ---

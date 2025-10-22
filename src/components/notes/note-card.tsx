@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { clsx } from "clsx";
 import type { Note, NotePattern } from "@/lib/types/note";
+import type { ViewMode } from "@/lib/types/settings";
 import { useNotes } from "@/components/providers/notes-provider";
 import { NOTE_COLORS } from "@/lib/constants/note-colors";
 import { NOTE_PATTERNS } from "@/lib/constants/note-patterns";
@@ -24,9 +25,10 @@ import { ConfirmModal } from "@/components/ui/confirm-modal";
 
 type NoteCardProps = {
   note: Note;
+  viewMode?: ViewMode;
 };
 
-export function NoteCard({ note }: NoteCardProps) {
+export function NoteCard({ note, viewMode = "masonry" }: NoteCardProps) {
   const { togglePin, toggleArchive, deleteNote, updateNote } = useNotes();
   const { labels } = useLabels();
   const [isEditing, setIsEditing] = useState(false);
@@ -131,7 +133,10 @@ export function NoteCard({ note }: NoteCardProps) {
     <>
       <article
         className={clsx(
-          "group relative cursor-pointer break-inside-avoid overflow-visible rounded-3xl border-2 border-transparent px-5 py-4 shadow-lg transition hover:border-orange-500 dark:shadow-none",
+          "group relative cursor-pointer overflow-visible rounded-3xl border-2 border-transparent shadow-lg transition hover:border-orange-500 dark:shadow-none",
+          viewMode === "list"
+            ? "flex items-start gap-4 px-5 py-3"
+            : "break-inside-avoid px-5 py-4",
           backgroundClass,
           patternClass,
         )}
@@ -152,7 +157,10 @@ export function NoteCard({ note }: NoteCardProps) {
         </button>
 
         <div
-          className="max-h-[480px] overflow-y-auto pr-1"
+          className={clsx(
+            "overflow-y-auto pr-1",
+            viewMode === "list" ? "flex-1 max-h-24" : "max-h-[480px]",
+          )}
           onScroll={() => {
             // collapse palette when user scrolls content to avoid accidental overlay drift
             if (showPalette) {

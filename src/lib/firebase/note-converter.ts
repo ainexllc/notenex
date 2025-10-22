@@ -22,6 +22,7 @@ export const noteConverter: FirestoreDataConverter<Note> = {
       reminderAt,
       sharedWith,
       sharedWithUserIds,
+      deletedAt,
       ...rest
     } = note;
     void _id;
@@ -41,6 +42,7 @@ export const noteConverter: FirestoreDataConverter<Note> = {
       updatedAt: updatedAt ? Timestamp.fromDate(updatedAt) : serverTimestamp(),
       sharedWith: collaboratorDocs,
       sharedWithUserIds: sharedWithUserIds ?? [],
+      deletedAt: deletedAt ? Timestamp.fromDate(deletedAt) : null,
     };
   },
   fromFirestore(snapshot, options) {
@@ -71,6 +73,7 @@ export const noteConverter: FirestoreDataConverter<Note> = {
       reminderId: data.reminderId ?? null,
       createdAt: toDate(data.createdAt),
       updatedAt: toDate(data.updatedAt),
+      deletedAt: toOptionalDate(data.deletedAt),
     };
   },
 };
@@ -111,6 +114,7 @@ export function createNotePayload(
         invitedAt: Timestamp.fromDate(collaborator.invitedAt),
       })) ?? [],
     sharedWithUserIds: overrides.sharedWithUserIds ?? [],
+    deletedAt: overrides.deletedAt ? Timestamp.fromDate(overrides.deletedAt) : null,
     createdAt: now,
     updatedAt: now,
   };

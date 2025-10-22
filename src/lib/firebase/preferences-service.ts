@@ -16,6 +16,7 @@ export const DEFAULT_PREFERENCES: Omit<UserPreference, "id" | "createdAt" | "upd
   digestEnabled: true,
   smartSuggestions: true,
   focusModePinned: true,
+  viewMode: "masonry",
 };
 
 function mapPreferenceSnapshot(
@@ -49,6 +50,7 @@ function mapPreferenceSnapshot(
       typeof data.focusModePinned === "boolean"
         ? data.focusModePinned
         : DEFAULT_PREFERENCES.focusModePinned,
+    viewMode: data.viewMode ?? DEFAULT_PREFERENCES.viewMode,
     createdAt: data.createdAt?.toDate?.() ?? new Date(),
     updatedAt: data.updatedAt?.toDate?.() ?? new Date(),
   };

@@ -4,6 +4,7 @@ import {
   arrayUnion,
   collectionGroup,
   deleteDoc,
+  getDoc,
   onSnapshot,
   orderBy,
   query,
@@ -31,7 +32,6 @@ import {
 } from "@/lib/firebase/note-converter";
 import type {
   ChecklistItem,
-  Note,
   NoteAttachment,
   NoteDraft,
   NoteType,
@@ -185,7 +185,10 @@ export async function toggleArchive(
 }
 
 export async function deleteNote(userId: string, noteId: string) {
-  await deleteDoc(clientNoteDoc(userId, noteId));
+  await updateDoc(clientNoteDoc(userId, noteId), {
+    deletedAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
 }
 
 export async function addAttachments(
@@ -216,6 +219,32 @@ export async function removeAttachments(
     attachments: arrayRemove(...attachments),
     updatedAt: serverTimestamp(),
   });
+}
+
+export async function restoreNote(userId: string, noteId: string) {
+  await updateDoc(clientNoteDoc(userId, noteId), {
+    deletedAt: null,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function permanentlyDeleteNote(userId: string, noteId: string) {
+  const noteRef = clientNoteDoc(userId, noteId).withConverter(noteConverter);
+  const snapshot = await getDoc(noteRef);
+
+  if (snapshot.exists()) {
+    const note = snapshot.data();
+    if (note.attachments?.length) {
+      const storage = getFirebaseStorage();
+      await Promise.all(
+        note.attachments
+          .filter((attachment) => attachment.storagePath)
+          .map((attachment) => deleteObject(ref(storage, attachment.storagePath))),
+      );
+    }
+  }
+
+  await deleteDoc(clientNoteDoc(userId, noteId));
 }
 
 export async function uploadNoteAttachment(
