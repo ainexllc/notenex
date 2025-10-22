@@ -8,7 +8,7 @@ import { Container } from "@/components/layout/container";
 
 function NotesSkeleton() {
   return (
-    <div className="columns-1 gap-4 sm:columns-2 lg:columns-3">
+    <div className="note-board-columns">
       {Array.from({ length: 6 }).map((_, index) => (
         <div
           key={index}
@@ -39,7 +39,7 @@ export function NoteBoard() {
   const hasNotes = useMemo(() => pinned.length + others.length > 0, [pinned, others]);
 
   return (
-    <Container className="space-y-8 lg:px-0" variant="narrow">
+    <Container className="space-y-8 lg:px-0 cq-board" variant="narrow">
       <NoteComposer />
 
       {loading ? (
@@ -52,7 +52,7 @@ export function NoteBoard() {
                 <span>Pinned</span>
                 <span>{pinned.length}</span>
               </header>
-              <div className="columns-1 gap-4 sm:columns-2 lg:columns-3">
+              <div className="note-board-columns">
                 {pinned.map((note) => (
                   <div key={note.id} className="mb-4">
                     <NoteCard note={note} />
@@ -69,7 +69,7 @@ export function NoteBoard() {
                   Others
                 </header>
               ) : null}
-              <div className="columns-1 gap-4 sm:columns-2 lg:columns-3">
+              <div className="note-board-columns">
                 {others.map((note) => (
                   <div key={note.id} className="mb-4">
                     <NoteCard note={note} />

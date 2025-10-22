@@ -74,11 +74,9 @@ function NavSection({
 }) {
   return (
     <div className="px-3 py-4">
-      {!isCollapsed && (
-        <p className="px-3 text-xs font-semibold uppercase tracking-wide text-ink-400">
-          {title}
-        </p>
-      )}
+      <p className="sidebar-section-title px-3 text-xs font-semibold uppercase tracking-wide text-ink-400">
+        {title}
+      </p>
       <nav className={clsx("space-y-1", !isCollapsed && "mt-2")}>{children}</nav>
     </div>
   );
@@ -132,7 +130,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   const content = (
     <div className={clsx(
-      "flex h-full flex-col bg-surface-base/90 pb-6 pt-4 backdrop-blur-2xl transition-all duration-300",
+      "cq-sidebar flex h-full flex-col bg-surface-base/90 pb-6 pt-4 backdrop-blur-2xl transition-all duration-300",
       isCollapsed ? "w-20" : "w-72"
     )}>
       <div className="flex items-center justify-between px-5 pb-2 text-xs text-muted lg:hidden">
@@ -172,7 +170,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   className={clsx(
                     "flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold transition-colors",
                     isActive
-                      ? "bg-accent-100 text-accent-900"
+                      ? "bg-ink-200 text-ink-900"
                       : "text-ink-500 hover:bg-surface-muted hover:text-ink-700",
                     isCollapsed && "justify-center"
                   )}
@@ -184,14 +182,14 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                       className={clsx(
                         "grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-transparent transition-colors",
                         isActive
-                          ? "bg-accent-200/80 text-accent-900"
+                          ? "bg-ink-300/80 text-ink-900"
                           : "bg-surface-muted text-ink-600",
                       )}
                     >
                       <Icon className="h-4 w-4" />
                     </span>
                     {!isCollapsed && (
-                      <span className={clsx(isActive ? "text-accent-900" : "text-inherit")}>
+                      <span className={clsx(isActive ? "text-ink-900" : "text-inherit")}>
                         {label}
                       </span>
                     )}
@@ -227,12 +225,12 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                       key={label.id}
                       type="button"
                       onClick={() => toggleLabelFilter(label.id)}
-                    className={clsx(
-                      "flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm transition",
-                      isActive
-                        ? "bg-accent-100 text-accent-900"
-                        : "text-ink-500 hover:bg-surface-muted hover:text-ink-700",
-                    )}
+                      className={clsx(
+                        "flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm transition",
+                        isActive
+                          ? "bg-ink-200 text-ink-900"
+                          : "text-ink-500 hover:bg-surface-muted hover:text-ink-700",
+                      )}
                       style={{ paddingLeft: `${12 + depth * 16}px` }}
                     >
                       <span
@@ -249,14 +247,14 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                           )}
                         />
                       </span>
-                    <span
-                      className={clsx(
-                        "flex-1 truncate text-left",
-                        isActive ? "text-accent-900" : "text-inherit",
-                      )}
-                    >
-                      {label.name}
-                    </span>
+                      <span
+                        className={clsx(
+                          "flex-1 truncate text-left",
+                          isActive ? "text-ink-900" : "text-inherit",
+                        )}
+                      >
+                        {label.name}
+                      </span>
                       {isActive ? (
                         <span className="text-[11px] font-semibold uppercase tracking-wide text-ink-400">
                           Active
